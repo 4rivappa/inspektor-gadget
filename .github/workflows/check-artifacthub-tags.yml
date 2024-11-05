@@ -28,7 +28,7 @@ jobs:
     - name: Gather valid gadgets
       id: filter-gadgets
       run: |
-        gadgets_dir="./gadgets"
+        gadgets_dir="gadgets"
         valid_gadgets=()
 
         # Loop to collect valid gadgets for check
@@ -41,8 +41,10 @@ jobs:
           fi
         done
 
+        echo "${valid_gadgets[*]}"
         valid_gadgets_string=$(IFS=,; echo "${valid_gadgets[*]}")
         echo "valid-gadgets-string=${valid_gadgets_string}" >> $GITHUB_OUTPUT
+        echo "$valid_gadgets_string"
 
     - name: Check artifacthub tags
       id: check-artifacthub-tags
