@@ -55,7 +55,6 @@ jobs:
         # Iterate over each gadget name in the string
         IFS=',' read -ra GADGETS <<< "$VALID_GADGETS_STRING"
 
-        GADGETS=()
         if [ ${#GADGETS[@]} -eq 0 ]; then
           echo -e "${LIGHT_YELLOW}Zero gadgets to be checked${NO_COLOR}"
           exit 0
@@ -85,6 +84,8 @@ jobs:
         else
           echo -e "\n${RED}All Failed!${NO_COLOR}"
         fi
+
+        failed_gadgets+=("herewego")
 
         if [ ${#failed_gadgets[@]} -gt 0 ]; then
           echo -e "\n${RED}Failed Gadgets: ${failed_gadgets[@]}${NO_COLOR}"
