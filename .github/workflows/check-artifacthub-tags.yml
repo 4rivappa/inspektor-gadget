@@ -1,0 +1,88 @@
+# Check if all gadgets have tagged official and cncf in artifacthub.
+name: Check ArtifactHub Tags of Gadgets
+
+on:
+  push:
+    paths:
+      - '*'
+      - 'gadgets/**'
+  pull_request:
+    paths:
+      - 'gadgets/**'
+
+env:
+  NO_COLOR: '\033[0m'
+  RED: '\033[0;31m'
+  GREEN: '\033[0;32m'
+  LIGHT_YELLOW: '\033[0;33m'
+
+jobs:
+  check-gadgets:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Gather valid gadgets
+      id: filter-gadgets
+      run: |
+        gadgets_dir="./gadgets"
+        valid_gadgets=()
+
+        # Loop to collect valid gadgets for check
+        for subdir in "$gadgets_dir"/*/; do
+          if [[ -f "$subdir/artifacthub-pkg.yml" ]]; then
+            subdir_name=$(basename "$subdir")
+            # Replace "_" with "-"
+            subdir_name=${subdir_name//_/-}
+            valid_gadgets+=("$subdir_name")
+          fi
+        done
+
+        valid_gadgets_string=$(IFS=,; echo "${valid_gadgets[*]}")
+        echo "valid-gadgets-string=${valid_gadgets_string}" >> $GITHUB_OUTPUT
+
+    - name: Check artifacthub tags
+      id: check-artifacthub-tags
+      env:
+        VALID_GADGETS_STRING: ${{ steps.filter-gadgets.output.valid-gadgets-string }}
+      run: |
+        passed_gadgets=()
+        failed_gadgets=()
+
+        # Iterate over each gadget name in the string
+        IFS=',' read -ra GADGETS <<< "$VALID_GADGETS_STRING"
+
+        for gadget in "${GADGETS[@]}"; do
+          echo -e "Checking gadget: ${LIGHT_YELLOW}$gadget${NO_COLOR}"
+
+          # Perform the curl request to get JSON data
+          response=$(curl -s -X 'GET' \
+            "https://artifacthub.io/api/v1/packages/inspektor-gadget/gadgets/$gadget" \
+            -H 'accept: application/json')
+
+          # Extract 'official' and 'cncf' values (if there are no keys, jq will return null)
+          official=$(echo "$response" | jq -r '.official')
+          cncf=$(echo "$response" | jq -r '.cncf')
+
+          if [[ "$official" == "true" && "$cncf" == "true" ]]; then
+            passed_gadgets+=("$gadget")
+          else
+            failed_gadgets+=("$gadget")
+          fi
+        done
+
+        if [ ${#passed_gadgets[@]} -gt 0 ]; then
+          echo -e "\n${GREEN}Passed Gadgets: ${passed_gadgets[@]}${NO_COLOR}"
+        else
+          echo -e "\n${RED}All Failed!${NO_COLOR}"
+        fi
+
+        if [ ${#failed_gadgets[@]} -gt 0 ]; then
+          echo -e "\n${RED}Failed Gadgets: ${failed_gadgets[@]}${NO_COLOR}"
+          # Exit with status code 1 if there are failed gadgets
+          exit 1
+        else
+          echo -e "\n${GREEN}All Passed!${NO_COLOR}"
+        fi
