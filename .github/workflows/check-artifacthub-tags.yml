@@ -49,6 +49,8 @@ jobs:
       env:
         VALID_GADGETS_STRING: ${{ steps.filter-gadgets.output.valid-gadgets-string }}
       run: |
+        echo "$VALID_GADGETS_STRING"
+
         passed_gadgets=()
         failed_gadgets=()
 
