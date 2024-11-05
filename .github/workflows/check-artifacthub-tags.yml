@@ -85,8 +85,6 @@ jobs:
           echo -e "\n${RED}All Failed!${NO_COLOR}"
         fi
 
-        failed_gadgets+=("herewego")
-
         if [ ${#failed_gadgets[@]} -gt 0 ]; then
           echo -e "\n${RED}Failed Gadgets: ${failed_gadgets[@]}${NO_COLOR}"
           # Exit with status code 1 if there are failed gadgets
