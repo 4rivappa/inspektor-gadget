@@ -2,6 +2,7 @@
 name: Check ArtifactHub Tags of Gadgets
 
 on:
+  workflow_dispatch:
   push:
     paths:
       - '*'
