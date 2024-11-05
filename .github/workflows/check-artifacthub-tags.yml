@@ -55,6 +55,12 @@ jobs:
         # Iterate over each gadget name in the string
         IFS=',' read -ra GADGETS <<< "$VALID_GADGETS_STRING"
 
+        GADGETS=()
+        if [ ${#GADGETS[@]} -eq 0 ]; then
+          echo -e "${LIGHT_YELLOW}Zero gadgets to be checked${NO_COLOR}"
+          exit 0
+        fi
+
         for gadget in "${GADGETS[@]}"; do
           echo -e "Checking gadget: ${LIGHT_YELLOW}$gadget${NO_COLOR}"
 
