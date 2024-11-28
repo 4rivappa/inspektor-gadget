@@ -65,34 +65,6 @@ type ExpectedFsnotifyEvent struct {
 	Name string `json:"name"`
 }
 
-func (e ExpectedFsnotifyEvent) Print() {
-	fmt.Printf("Timestamp: %s\n", e.Timestamp)
-	fmt.Printf("Type: %s\n", e.Type)
-	fmt.Printf("TraceeCommand:_%s__\n", e.TraceeProc.Comm)
-	fmt.Printf("TracerCommand:_%s__\n", e.TracerProc.Comm)
-	fmt.Printf("TraceeUid: %d\n", e.TraceeProc.Creds.Uid)
-	fmt.Printf("TracerGid: %d\n", e.TracerProc.Creds.Gid)
-	fmt.Printf("TraceeMntnsId: %d\n", e.TraceeMntnsId)
-	fmt.Printf("TracerMntnsId: %d\n", e.TracerMntnsId)
-	fmt.Printf("TraceeUId: %d\n", e.TraceeUId)
-	fmt.Printf("TraceeGId: %d\n", e.TraceeGId)
-	fmt.Printf("TracerUId: %d\n", e.TracerUId)
-	fmt.Printf("TracerGId: %d\n", e.TracerGId)
-	fmt.Printf("Prio: %d\n", e.Prio)
-	fmt.Printf("FaMask: %d\n", e.FaMask)
-	fmt.Printf("IMask: %d\n", e.IMask)
-	fmt.Printf("FaType: %s\n", e.FaType)
-	fmt.Printf("FaPId: %d\n", e.FaPId)
-	fmt.Printf("FaFlags: %d\n", e.FaFlags)
-	fmt.Printf("FaFFlags: %d\n", e.FaFFlags)
-	fmt.Printf("FaResponse: %s\n", e.FaResponse)
-	fmt.Printf("IWd: %d\n", e.IWd)
-	fmt.Printf("ICookie: %d\n", e.ICookie)
-	fmt.Printf("IIno: %d\n", e.IIno)
-	fmt.Printf("IInoDir: %d\n", e.IInoDir)
-	fmt.Printf("Name: %s\n", e.Name)
-}
-
 type testDef struct {
 	runnerConfig  *utilstest.RunnerConfig
 	generateEvent func() (string, error)
@@ -108,42 +80,6 @@ func TestFsnotifyGadget(t *testing.T) {
 			runnerConfig:  runnerConfig,
 			generateEvent: generateEvent,
 			validateEvent: func(t *testing.T, info *utilstest.RunnerInfo, filename string, events []ExpectedFsnotifyEvent) {
-
-				fmt.Printf("--------------------------------------------------\n")
-				fmt.Printf("YOU ARE LOOKING FOR THIS SECTION\n")
-				fmt.Printf("--------------------------------------------------\n")
-				for _, event := range events {
-					event.Print()
-					fmt.Printf("--------------------------------------------------\n")
-				}
-
-				fmt.Printf("runnerInfo proc command: %s\n", info.Proc.Comm)
-				fmt.Printf("runnerInfo proc pid: %d\n", info.Proc.Pid)
-				fmt.Printf("runnerInfo proc tid: %d\n", info.Proc.Tid)
-				fmt.Printf("--------------------------------------------------\n")
-
-				expectedEvent := ExpectedFsnotifyEvent{
-					Type: "inotify",
-
-					IMask: 134217732, // 134217736 = 0x08000008 = FS_CLOSE_WRITE | FS_EVENT_ON_CHILD
-					Name:  filename,
-
-					Timestamp: utils.NormalizedStr,
-
-					TraceeMntnsId: utils.NormalizedInt,
-					TracerMntnsId: utils.NormalizedInt,
-
-					FaType:     utils.NormalizedStr,
-					FaResponse: utils.NormalizedStr,
-
-					IWd:     utils.NormalizedInt,
-					IIno:    utils.NormalizedInt,
-					IInoDir: utils.NormalizedInt,
-				}
-				fmt.Printf("EXPECTED -----------------------------------------\n")
-				expectedEvent.Print()
-				fmt.Printf("EXPECTED -----------------------------------------\n")
-
 				utilstest.ExpectAtLeastOneEvent(func(info *utilstest.RunnerInfo, pid int) *ExpectedFsnotifyEvent {
 					return &ExpectedFsnotifyEvent{
 						Type: "inotify",
