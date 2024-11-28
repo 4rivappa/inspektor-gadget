@@ -68,8 +68,8 @@ type ExpectedFsnotifyEvent struct {
 func (e ExpectedFsnotifyEvent) Print() {
 	fmt.Printf("Timestamp: %s\n", e.Timestamp)
 	fmt.Printf("Type: %s\n", e.Type)
-	fmt.Printf("TraceeCommand: %s\n", e.TraceeProc.Comm)
-	fmt.Printf("TracerCommand: %s\n", e.TracerProc.Comm)
+	fmt.Printf("TraceeCommand:_%s__\n", e.TraceeProc.Comm)
+	fmt.Printf("TracerCommand:_%s__\n", e.TracerProc.Comm)
 	fmt.Printf("TraceeUid: %d\n", e.TraceeProc.Creds.Uid)
 	fmt.Printf("TracerGid: %d\n", e.TracerProc.Creds.Gid)
 	fmt.Printf("TraceeMntnsId: %d\n", e.TraceeMntnsId)
