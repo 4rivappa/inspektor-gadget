@@ -15,10 +15,12 @@
 package tests
 
 import (
+	"fmt"
 	"os/exec"
 	"testing"
 	"time"
-	"fmt"
+
+	"github.com/fsnotify/fsnotify"
 
 	gadgettesting "github.com/inspektor-gadget/inspektor-gadget/gadgets/testing"
 	utilstest "github.com/inspektor-gadget/inspektor-gadget/internal/test"
@@ -26,7 +28,6 @@ import (
 	ebpftypes "github.com/inspektor-gadget/inspektor-gadget/pkg/operators/ebpf/types"
 	"github.com/inspektor-gadget/inspektor-gadget/pkg/testing/gadgetrunner"
 	"github.com/inspektor-gadget/inspektor-gadget/pkg/testing/utils"
-	"github.com/fsnotify/fsnotify"
 )
 
 type ExpectedFsnotifyEvent struct {
@@ -46,7 +47,7 @@ type ExpectedFsnotifyEvent struct {
 	TracerGId uint32 `json:"tracer_gid"`
 
 	Prio uint32 `json:"prio"`
-	
+
 	FaMask uint32 `json:"fa_mask"`
 	IMask  uint32 `json:"i_mask"`
 
@@ -56,9 +57,9 @@ type ExpectedFsnotifyEvent struct {
 	FaFFlags   uint32 `json:"fa_f_flags"`
 	FaResponse string `json:"fa_response"`
 
-	IWd int32 `json:"i_wd"`
+	IWd     int32  `json:"i_wd"`
 	ICookie uint32 `json:"i_cookie"`
-	IIno uint32 `json:"i_ino"`
+	IIno    uint32 `json:"i_ino"`
 	IInoDir uint32 `json:"i_ino_dir"`
 
 	Name string `json:"name"`
@@ -93,9 +94,9 @@ func (e ExpectedFsnotifyEvent) Print() {
 }
 
 type testDef struct {
-	runnerConfig   *utilstest.RunnerConfig
-	generateEvent  func() (string, error)
-	validateEvent  func(t *testing.T, info *utilstest.RunnerInfo, filename string, events []ExpectedFsnotifyEvent)
+	runnerConfig  *utilstest.RunnerConfig
+	generateEvent func() (string, error)
+	validateEvent func(t *testing.T, info *utilstest.RunnerInfo, filename string, events []ExpectedFsnotifyEvent)
 }
 
 func TestFsnotifyGadget(t *testing.T) {
@@ -123,35 +124,21 @@ func TestFsnotifyGadget(t *testing.T) {
 
 				utilstest.ExpectAtLeastOneEvent(func(info *utilstest.RunnerInfo, pid int) *ExpectedFsnotifyEvent {
 					return &ExpectedFsnotifyEvent{
-						Type:  "inotify",
+						Type: "inotify",
 
 						IMask: 134217736, // 134217736 = 0x08000008 = FS_CLOSE_WRITE | FS_EVENT_ON_CHILD
 						Name:  filename,
 
 						Timestamp: utils.NormalizedStr,
-						TraceeProc: utils.BuildProc("", 0, 0),
-						TracerProc: utils.BuildProc("", 0, 0),
 
-					    TraceeMntnsId: utils.NormalizedInt,
+						TraceeMntnsId: utils.NormalizedInt,
 						TracerMntnsId: utils.NormalizedInt,
 
-						TraceeUId: utils.NormalizedInt,
-						TraceeGId: utils.NormalizedInt,
-						TracerUId: utils.NormalizedInt,
-						TracerGId: utils.NormalizedInt,
-
-						Prio: utils.NormalizedInt,
-						FaMask: utils.NormalizedInt,
-
-						FaType: utils.NormalizedStr,
-						FaPId: utils.NormalizedInt,
-						FaFlags: utils.NormalizedInt,
-						FaFFlags: utils.NormalizedInt,
+						FaType:     utils.NormalizedStr,
 						FaResponse: utils.NormalizedStr,
 
-						IWd: utils.NormalizedInt,
-						ICookie: utils.NormalizedInt,
-						IIno: utils.NormalizedInt,
+						IWd:     utils.NormalizedInt,
+						IIno:    utils.NormalizedInt,
 						IInoDir: utils.NormalizedInt,
 					}
 				})(t, info, 0, events)
@@ -220,7 +207,7 @@ func TestFsnotifyGadget(t *testing.T) {
 }
 
 func generateEvent() (string, error) {
-    watcher, err := fsnotify.NewWatcher()
+	watcher, err := fsnotify.NewWatcher()
 	if err != nil {
 		return "", err
 	}
