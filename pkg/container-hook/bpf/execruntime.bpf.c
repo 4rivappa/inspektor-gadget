@@ -6,8 +6,6 @@
 
 #include "execruntime.h"
 
-const volatile int max_args = DEFAULT_MAXARGS;
-
 static const struct record empty_record = {};
 
 // configured by userspace
@@ -134,6 +132,7 @@ int ig_execve_e(struct syscall_trace_enter *ctx)
 	task = (struct task_struct *)bpf_get_current_task();
 
 	bpf_get_current_comm(&record->caller_comm, sizeof(record->caller_comm));
+	record->mntns_id = BPF_CORE_READ(task, nsproxy, mnt_ns, ns.inum);
 	record->pid = tgid;
 	record->args_size = 0;
 
@@ -148,7 +147,7 @@ int ig_execve_e(struct syscall_trace_enter *ctx)
 	}
 
 #pragma unroll
-	for (i = 1; i < TOTAL_MAX_ARGS && i < max_args; i++) {
+	for (i = 1; i < TOTAL_MAX_ARGS; i++) {
 		ret = bpf_probe_read_user(&argp, sizeof(argp), &args[i]);
 		if (ret != 0 || !argp)
 			return 0;
