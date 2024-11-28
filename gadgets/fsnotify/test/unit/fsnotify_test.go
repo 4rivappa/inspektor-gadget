@@ -122,6 +122,28 @@ func TestFsnotifyGadget(t *testing.T) {
 				fmt.Printf("runnerInfo proc tid: %d\n", info.Proc.Tid)
 				fmt.Printf("--------------------------------------------------\n")
 
+				expectedEvent := ExpectedFsnotifyEvent{
+					Type: "inotify",
+
+					IMask: 134217736, // 134217736 = 0x08000008 = FS_CLOSE_WRITE | FS_EVENT_ON_CHILD
+					Name:  filename,
+
+					Timestamp: utils.NormalizedStr,
+
+					TraceeMntnsId: utils.NormalizedInt,
+					TracerMntnsId: utils.NormalizedInt,
+
+					FaType:     utils.NormalizedStr,
+					FaResponse: utils.NormalizedStr,
+
+					IWd:     utils.NormalizedInt,
+					IIno:    utils.NormalizedInt,
+					IInoDir: utils.NormalizedInt,
+				}
+				fmt.Printf("EXPECTED -----------------------------------------\n")
+				expectedEvent.Print()
+				fmt.Printf("EXPECTED -----------------------------------------\n")
+
 				utilstest.ExpectAtLeastOneEvent(func(info *utilstest.RunnerInfo, pid int) *ExpectedFsnotifyEvent {
 					return &ExpectedFsnotifyEvent{
 						Type: "inotify",
