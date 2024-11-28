@@ -125,7 +125,7 @@ func TestFsnotifyGadget(t *testing.T) {
 				expectedEvent := ExpectedFsnotifyEvent{
 					Type: "inotify",
 
-					IMask: 134217736, // 134217736 = 0x08000008 = FS_CLOSE_WRITE | FS_EVENT_ON_CHILD
+					IMask: 134217732, // 134217736 = 0x08000008 = FS_CLOSE_WRITE | FS_EVENT_ON_CHILD
 					Name:  filename,
 
 					Timestamp: utils.NormalizedStr,
@@ -148,7 +148,7 @@ func TestFsnotifyGadget(t *testing.T) {
 					return &ExpectedFsnotifyEvent{
 						Type: "inotify",
 
-						IMask: 134217736, // 134217736 = 0x08000008 = FS_CLOSE_WRITE | FS_EVENT_ON_CHILD
+						IMask: 134217732, // 134217732 = 0x08000004 = FS_ATTRIB | FS_EVENT_ON_CHILD
 						Name:  filename,
 
 						Timestamp: utils.NormalizedStr,
