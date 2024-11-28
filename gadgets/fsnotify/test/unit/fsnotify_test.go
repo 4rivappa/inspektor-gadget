@@ -233,7 +233,7 @@ func generateEvent() (string, error) {
 	if err != nil {
 		return "", err
 	}
-	// defer watcher.Close()
+	defer watcher.Close()
 
 	err = watcher.Add("/tmp/")
 	if err != nil {
