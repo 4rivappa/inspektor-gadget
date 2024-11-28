@@ -148,6 +148,14 @@ func ExpectAtLeastOneEvent[Event any, Extra any](getEvent func(info *RunnerInfo,
 			t.Fatalf("Event doesn't match:\n%s",
 				cmp.Diff(expectedEvent, &events[0]))
 		}
+		if len(events) == 2 {
+			t.Fatalf("Event doesn't match:\n%s",
+				cmp.Diff(expectedEvent, &events[1]))
+		}
+		if len(events) == 3 {
+			t.Fatalf("Event doesn't match:\n%s",
+				cmp.Diff(expectedEvent, &events[2]))
+		}
 		t.Fatalf("Event wasn't captured")
 	}
 }
