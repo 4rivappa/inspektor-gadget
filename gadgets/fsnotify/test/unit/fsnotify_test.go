@@ -47,17 +47,17 @@ func (p *Process) Print(extraInfo string) {
 	fmt.Printf("  PComm: %s\n", p.PComm)
 }
 
-func (r *utilstest.RunnerInfo) Print() {
-	fmt.Printf("Test RunnerInfo *** :\n")
-	fmt.Printf("  Pid:         %d\n", r.Pid)
-	fmt.Printf("  Tid:         %d\n", r.Tid)
-	fmt.Printf("  Comm:        %s\n", r.Comm)
-	fmt.Printf("  Uid:         %d\n", r.Uid)
-	fmt.Printf("  Gid:         %d\n", r.Gid)
-	fmt.Printf("  MountNsID:   %d\n", r.MountNsID)
-	fmt.Printf("  NetworkNsID: %d\n", r.NetworkNsID)
-	fmt.Printf("  UserNsID:    %d\n", r.UserNsID)
-}
+// func (r *utilstest.RunnerInfo) Print() {
+// 	fmt.Printf("Test RunnerInfo *** :\n")
+// 	fmt.Printf("  Pid:         %d\n", r.Pid)
+// 	fmt.Printf("  Tid:         %d\n", r.Tid)
+// 	fmt.Printf("  Comm:        %s\n", r.Comm)
+// 	fmt.Printf("  Uid:         %d\n", r.Uid)
+// 	fmt.Printf("  Gid:         %d\n", r.Gid)
+// 	fmt.Printf("  MountNsID:   %d\n", r.MountNsID)
+// 	fmt.Printf("  NetworkNsID: %d\n", r.NetworkNsID)
+// 	fmt.Printf("  UserNsID:    %d\n", r.UserNsID)
+// }
 
 type ExpectedFsnotifyEvent struct {
 	Timestamp string `json:"timestamp"`
@@ -205,31 +205,31 @@ func TestFsnotifyGadget(t *testing.T) {
 			runner := utilstest.NewRunnerWithTest(t, testCase.runnerConfig)
 
 			normalizeEvent := func(event *ExpectedFsnotifyEvent) {
-				utils.NormalizeString(&event.Timestamp)
+				// utils.NormalizeString(&event.Timestamp)
 
-				utils.NormalizeProc(&event.TraceeProc)
-				utils.NormalizeProc(&event.TracerProc)
-				utils.NormalizeInt(&event.TraceeMntnsId)
-				utils.NormalizeInt(&event.TracerMntnsId)
+				// // utils.NormalizeProc(&event.TraceeProc)
+				// // utils.NormalizeProc(&event.TracerProc)
+				// utils.NormalizeInt(&event.TraceeMntnsId)
+				// utils.NormalizeInt(&event.TracerMntnsId)
 
-				utils.NormalizeInt(&event.TraceeUId)
-				utils.NormalizeInt(&event.TraceeGId)
-				utils.NormalizeInt(&event.TracerUId)
-				utils.NormalizeInt(&event.TracerGId)
+				// utils.NormalizeInt(&event.TraceeUId)
+				// utils.NormalizeInt(&event.TraceeGId)
+				// utils.NormalizeInt(&event.TracerUId)
+				// utils.NormalizeInt(&event.TracerGId)
 
-				utils.NormalizeInt(&event.Prio)
-				utils.NormalizeInt(&event.FaMask)
+				// utils.NormalizeInt(&event.Prio)
+				// utils.NormalizeInt(&event.FaMask)
 
-				utils.NormalizeString(&event.FaType)
-				utils.NormalizeInt(&event.FaPId)
-				utils.NormalizeInt(&event.FaFlags)
-				utils.NormalizeInt(&event.FaFFlags)
-				utils.NormalizeString(&event.FaResponse)
+				// utils.NormalizeString(&event.FaType)
+				// utils.NormalizeInt(&event.FaPId)
+				// utils.NormalizeInt(&event.FaFlags)
+				// utils.NormalizeInt(&event.FaFFlags)
+				// utils.NormalizeString(&event.FaResponse)
 
-				utils.NormalizeInt(&event.IWd)
-				utils.NormalizeInt(&event.ICookie)
-				utils.NormalizeInt(&event.IIno)
-				utils.NormalizeInt(&event.IInoDir)
+				// utils.NormalizeInt(&event.IWd)
+				// utils.NormalizeInt(&event.ICookie)
+				// utils.NormalizeInt(&event.IIno)
+				// utils.NormalizeInt(&event.IInoDir)
 			}
 			onGadgetRun := func(gadgetCtx operators.GadgetContext) error {
 				utilstest.RunWithRunner(t, runner, func() error {

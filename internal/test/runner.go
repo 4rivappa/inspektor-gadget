@@ -63,6 +63,18 @@ type RunnerInfo struct {
 	Proc ebpftypes.Process
 }
 
+func (r *RunnerInfo) Print() {
+	fmt.Printf("Test RunnerInfo *** :\n")
+	fmt.Printf("  Pid:         %d\n", r.Pid)
+	fmt.Printf("  Tid:         %d\n", r.Tid)
+	fmt.Printf("  Comm:        %s\n", r.Comm)
+	fmt.Printf("  Uid:         %d\n", r.Uid)
+	fmt.Printf("  Gid:         %d\n", r.Gid)
+	fmt.Printf("  MountNsID:   %d\n", r.MountNsID)
+	fmt.Printf("  NetworkNsID: %d\n", r.NetworkNsID)
+	fmt.Printf("  UserNsID:    %d\n", r.UserNsID)
+}
+
 // Runner is a helper type to execute tests in different conditions. It
 // creates a go routine that is executed in a different mount namespace,
 // user ID, etc. to simulate events hapenning inside containers.
