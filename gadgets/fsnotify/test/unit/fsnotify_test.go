@@ -17,6 +17,7 @@ package tests
 import (
 	"fmt"
 	"os/exec"
+	"strings"
 	"testing"
 	"time"
 
