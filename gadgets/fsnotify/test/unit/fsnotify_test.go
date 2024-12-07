@@ -16,7 +16,7 @@ package tests
 
 import (
 	"fmt"
-	"os/exec"
+	"os"
 	"strings"
 	"testing"
 	"time"
@@ -272,16 +272,16 @@ func generateEvent() (string, error) {
 	}
 	defer watcher.Close()
 
-	err = watcher.Add("/tmp/")
+	err = watcher.Add(os.TempDir())
 	if err != nil {
 		return "", err
 	}
 
-	touchCmd := exec.Command("touch", "/tmp/ABCDE")
-	err = touchCmd.Run()
+	newFile, err := os.CreateTemp("", "test-*.txt")
 	if err != nil {
 		return "", err
 	}
+	defer newFile.Close()
 
-	return "ABCDE", nil
+	return newFile.Name(), nil
 }
