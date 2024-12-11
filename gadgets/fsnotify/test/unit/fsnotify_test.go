@@ -136,14 +136,8 @@ type testDef struct {
 }
 
 func TestFsnotifyGadget(t *testing.T) {
-	const unprivilegedUID = int(1435)
-	const unprivilegedGID = int(6789)
-
 	gadgettesting.InitUnitTest(t)
-	runnerConfig := &utilstest.RunnerConfig{
-		Uid: unprivilegedUID,
-	    Gid: unprivilegedGID,
-	}
+	runnerConfig := &utilstest.RunnerConfig{}
 
 	testCases := map[string]testDef{
 		"captures_inotify_event": {
