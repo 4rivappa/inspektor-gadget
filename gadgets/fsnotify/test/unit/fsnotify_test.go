@@ -17,7 +17,7 @@ package tests
 import (
 	"fmt"
 	"os"
-	"strings"
+	// "strings"
 	"testing"
 	"time"
 
