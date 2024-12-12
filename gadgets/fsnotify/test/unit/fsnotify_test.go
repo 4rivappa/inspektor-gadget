@@ -34,24 +34,20 @@ import (
 const TASK_COMM_LEN = 16
 
 type Process struct {
-	PPid  uint32    `json:"ppid"`
-	Pid   uint32    `json:"pid"`
-	Tid   uint32    `json:"tid"`
-	Comm  [TASK_COMM_LEN]byte `json:"comm"`
-	PComm [TASK_COMM_LEN]byte `json:"pcomm"`
-};
+	PPid  uint32 `json:"ppid"`
+	Pid   uint32 `json:"pid"`
+	Tid   uint32 `json:"tid"`
+	Comm  string `json:"comm"`
+	PComm string `json:"pcomm"`
+}
 
 func (p *Process) Print(extraInfo string) {
-	commStr := strings.TrimRight(string(p.Comm[:]), "\x00")
-	pcommStr := strings.TrimRight(string(p.PComm[:]), "\x00")
-
-	// Print all the fields in a formatted manner
 	fmt.Printf("%s Process Info:\n", extraInfo)
 	fmt.Printf("  PPid:  %d\n", p.PPid)
 	fmt.Printf("  Pid:   %d\n", p.Pid)
 	fmt.Printf("  Tid:   %d\n", p.Tid)
-	fmt.Printf("  Comm:  %s\n", commStr)
-	fmt.Printf("  PComm: %s\n", pcommStr)
+	fmt.Printf("  Comm:  %s\n", p.Comm)
+	fmt.Printf("  PComm: %s\n", p.PComm)
 }
 
 // func (r *utilstest.RunnerInfo) Print() {
