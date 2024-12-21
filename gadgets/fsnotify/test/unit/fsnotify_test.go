@@ -214,7 +214,7 @@ func TestFsnotifyGadget(t *testing.T) {
 			runner := utilstest.NewRunnerWithTest(t, testCase.runnerConfig)
 
 			normalizeEvent := func(event *ExpectedFsnotifyEvent) {
-				// utils.NormalizeString(&event.Timestamp)
+				utils.NormalizeString(&event.Timestamp)
 
 				// // utils.NormalizeProc(&event.TraceeProc)
 				// // utils.NormalizeProc(&event.TracerProc)
@@ -290,5 +290,6 @@ func generateEvent() (string, error) {
 		return "", err
 	}
 
-	return newFile.Name(), nil
+	fileName := path.Base(newFile.Name())
+	return fileName, nil
 }
