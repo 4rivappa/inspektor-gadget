@@ -18,8 +18,8 @@ import (
 	"fmt"
 	"os"
 	"path"
-	"syscall"
 	"strings"
+	"syscall"
 	"testing"
 	"time"
 
@@ -28,7 +28,6 @@ import (
 	gadgettesting "github.com/inspektor-gadget/inspektor-gadget/gadgets/testing"
 	utilstest "github.com/inspektor-gadget/inspektor-gadget/internal/test"
 	"github.com/inspektor-gadget/inspektor-gadget/pkg/operators"
-	// ebpftypes "github.com/inspektor-gadget/inspektor-gadget/pkg/operators/ebpf/types"
 	"github.com/inspektor-gadget/inspektor-gadget/pkg/testing/gadgetrunner"
 	"github.com/inspektor-gadget/inspektor-gadget/pkg/testing/utils"
 )
@@ -43,36 +42,11 @@ type Process struct {
 	PComm [TASK_COMM_LEN]byte `json:"pcomm"`
 };
 
-func (p *Process) Print(extraInfo string) {
-	commStr := strings.TrimRight(string(p.Comm[:]), "\x00")
-	pcommStr := strings.TrimRight(string(p.PComm[:]), "\x00")
-
-	// Print all the fields in a formatted manner
-	fmt.Printf("%s Process Info:\n", extraInfo)
-	fmt.Printf("  PPid:  %d\n", p.PPid)
-	fmt.Printf("  Pid:   %d\n", p.Pid)
-	fmt.Printf("  Tid:   %d\n", p.Tid)
-	fmt.Printf("  Comm:  %s\n", commStr)
-	fmt.Printf("  PComm: %s\n", pcommStr)
-}
-
 type EventDetails struct {
 	FileName string
 	Ino      uint32
 	InoDir   uint32
 }
-
-// func (r *utilstest.RunnerInfo) Print() {
-// 	fmt.Printf("Test RunnerInfo *** :\n")
-// 	fmt.Printf("  Pid:         %d\n", r.Pid)
-// 	fmt.Printf("  Tid:         %d\n", r.Tid)
-// 	fmt.Printf("  Comm:        %s\n", r.Comm)
-// 	fmt.Printf("  Uid:         %d\n", r.Uid)
-// 	fmt.Printf("  Gid:         %d\n", r.Gid)
-// 	fmt.Printf("  MountNsID:   %d\n", r.MountNsID)
-// 	fmt.Printf("  NetworkNsID: %d\n", r.NetworkNsID)
-// 	fmt.Printf("  UserNsID:    %d\n", r.UserNsID)
-// }
 
 type ExpectedFsnotifyEvent struct {
 	Timestamp string `json:"timestamp"`
@@ -109,34 +83,6 @@ type ExpectedFsnotifyEvent struct {
 	Name string `json:"name"`
 }
 
-func (e ExpectedFsnotifyEvent) Print() {
-	fmt.Printf("Timestamp: %s\n", e.Timestamp)
-	fmt.Printf("Type: %s\n", e.Type)
-
-	e.TraceeProc.Print("Tracee")
-	e.TracerProc.Print("Tracer")
-	
-	fmt.Printf("TraceeMntnsId: %d\n", e.TraceeMntnsId)
-	fmt.Printf("TracerMntnsId: %d\n", e.TracerMntnsId)
-	fmt.Printf("TraceeUId: %d\n", e.TraceeUId)
-	fmt.Printf("TraceeGId: %d\n", e.TraceeGId)
-	fmt.Printf("TracerUId: %d\n", e.TracerUId)
-	fmt.Printf("TracerGId: %d\n", e.TracerGId)
-	fmt.Printf("Prio: %d\n", e.Prio)
-	fmt.Printf("FaMask: %d\n", e.FaMask)
-	fmt.Printf("IMask: %d\n", e.IMask)
-	fmt.Printf("FaType: %s\n", e.FaType)
-	fmt.Printf("FaPId: %d\n", e.FaPId)
-	fmt.Printf("FaFlags: %d\n", e.FaFlags)
-	fmt.Printf("FaFFlags: %d\n", e.FaFFlags)
-	fmt.Printf("FaResponse: %s\n", e.FaResponse)
-	fmt.Printf("IWd: %d\n", e.IWd)
-	fmt.Printf("ICookie: %d\n", e.ICookie)
-	fmt.Printf("IIno: %d\n", e.IIno)
-	fmt.Printf("IInoDir: %d\n", e.IInoDir)
-	fmt.Printf("Name: %s\n", e.Name)
-}
-
 type testDef struct {
 	runnerConfig  *utilstest.RunnerConfig
 	generateEvent func() (EventDetails, error)
@@ -152,65 +98,24 @@ func TestFsnotifyGadget(t *testing.T) {
 			runnerConfig:  runnerConfig,
 			generateEvent: generateEvent,
 			validateEvent: func(t *testing.T, info *utilstest.RunnerInfo, eventDetails EventDetails, events []ExpectedFsnotifyEvent) {
-
-				fmt.Println("Length of events:", len(events))
-
-				fmt.Printf("--------------------------------------------------\n")
-				fmt.Printf("YOU ARE LOOKING FOR THIS SECTION\n")
-				fmt.Printf("--------------------------------------------------\n")
-				for _, event := range events {
-					event.Print()
-					fmt.Printf("--------------------------------------------------\n")
-				}
-
-				info.Print()
-				fmt.Printf("runnerInfo proc command: %s\n", info.Proc.Comm)
-				fmt.Printf("runnerInfo proc pid: %d\n", info.Proc.Pid)
-				fmt.Printf("runnerInfo proc tid: %d\n", info.Proc.Tid)
-				fmt.Printf("--------------------------------------------------\n")
-
-				// expectedEvent := ExpectedFsnotifyEvent{
-				// 	Type: "inotify",
-
-				// 	IMask: 0x08000002, // FS_MODIFY | FS_EVENT_ON_CHILD
-				// 	Name:  filename,
-
-				// 	Timestamp: utils.NormalizedStr,
-
-				// 	TraceeMntnsId: utils.NormalizedInt,
-				// 	TracerMntnsId: utils.NormalizedInt,
-
-				// 	FaType:     utils.NormalizedStr,
-				// 	FaResponse: utils.NormalizedStr,
-
-				// 	IWd:     utils.NormalizedInt,
-
-				// 	IIno:    eventDetails.Ino,
-				// 	IInoDir: eventDetails.InoDir,
-				// }
-				// fmt.Printf("EXPECTED -----------------------------------------\n")
-				// expectedEvent.Print()
-				// fmt.Printf("EXPECTED -----------------------------------------\n")
-			
 				utilstest.ExpectAtLeastOneEvent(func(info *utilstest.RunnerInfo, pid int) *ExpectedFsnotifyEvent {
 					return &ExpectedFsnotifyEvent{
-						Type: "inotify",
-
-						IMask: 0x08000002, // FS_MODIFY | FS_EVENT_ON_CHILD
-						Name:  eventDetails.FileName,
-
 						Timestamp: utils.NormalizedStr,
 
+						Type:  "inotify",
+						IMask: 0x08000002, // FS_MODIFY | FS_EVENT_ON_CHILD
+						
 						TraceeMntnsId: info.MountNsID,
 						TracerMntnsId: utils.NormalizedInt,
-
+						
 						FaType:     utils.NormalizedStr,
 						FaResponse: utils.NormalizedStr,
-
+						
 						IWd:     utils.NormalizedInt,
-
 						IIno:    eventDetails.Ino,
 						IInoDir: eventDetails.InoDir,
+
+						Name:  eventDetails.FileName,
 					}
 				})(t, info, 0, events)
 			},
@@ -225,25 +130,9 @@ func TestFsnotifyGadget(t *testing.T) {
 
 			normalizeEvent := func(event *ExpectedFsnotifyEvent) {
 				utils.NormalizeString(&event.Timestamp)
-
-				// // utils.NormalizeProc(&event.TraceeProc)
-				// // utils.NormalizeProc(&event.TracerProc)
-				// utils.NormalizeInt(&event.TraceeMntnsId)
-
 				utils.NormalizeInt(&event.TracerMntnsId)
 
-				// utils.NormalizeInt(&event.TraceeUId)
-				// utils.NormalizeInt(&event.TraceeGId)
-				// utils.NormalizeInt(&event.TracerUId)
-				// utils.NormalizeInt(&event.TracerGId)
-
-				// utils.NormalizeInt(&event.Prio)
-				// utils.NormalizeInt(&event.FaMask)
-
 				utils.NormalizeString(&event.FaType)
-				// utils.NormalizeInt(&event.FaPId)
-				// utils.NormalizeInt(&event.FaFlags)
-				// utils.NormalizeInt(&event.FaFFlags)
 				utils.NormalizeString(&event.FaResponse)
 			}
 			onGadgetRun := func(gadgetCtx operators.GadgetContext) error {
@@ -313,7 +202,7 @@ func generateEvent() (EventDetails, error) {
 }
 
 func calculateInodeValues(fileName string) (uint64, uint64, error) {
-	// collect Inode information about file
+	// extract inode info about file
 	fileInfo, err := os.Stat(fileName)
 	if err != nil {
 		return 0, 0, err
@@ -325,7 +214,7 @@ func calculateInodeValues(fileName string) (uint64, uint64, error) {
 	}
 	fmt.Printf("Inode of File: %d\n", inode)
 
-	// collect Inode information about directory
+	// extract inode info about directory
 	dirInfo, err := os.Stat(path.Dir(fileName))
 	if err != nil {
 		return 0, 0, err
