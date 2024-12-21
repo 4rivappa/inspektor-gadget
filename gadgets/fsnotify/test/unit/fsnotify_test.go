@@ -139,7 +139,7 @@ func (e ExpectedFsnotifyEvent) Print() {
 
 type testDef struct {
 	runnerConfig  *utilstest.RunnerConfig
-	generateEvent func() (string, error)
+	generateEvent func() (EventDetails, error)
 	validateEvent func(t *testing.T, info *utilstest.RunnerInfo, eventDetails EventDetails, events []ExpectedFsnotifyEvent)
 }
 
