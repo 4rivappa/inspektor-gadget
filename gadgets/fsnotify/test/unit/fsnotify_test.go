@@ -285,5 +285,24 @@ func generateEvent() (string, error) {
 	}
 	defer newFile.Close()
 
+	//write
+	_, err = newFile.WriteString("Hello, fsnotify!")
+	if err != nil {
+		return "", err
+	}
+
+	//read
+	content, err := ioutil.ReadFile(newFile.Name())
+	if err != nil {
+		return "", err
+	}
+	fmt.Println("File content:", string(content))
+
+	//rename
+	err = os.Rename(newFile.Name(), newFile.Name()+"_renamed")
+	if err != nil {
+		return "", err
+	}
+
 	return newFile.Name(), nil
 }
