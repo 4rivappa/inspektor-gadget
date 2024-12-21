@@ -161,33 +161,33 @@ func TestFsnotifyGadget(t *testing.T) {
 				fmt.Printf("runnerInfo proc tid: %d\n", info.Proc.Tid)
 				fmt.Printf("--------------------------------------------------\n")
 
-				// expectedEvent := ExpectedFsnotifyEvent{
-				// 	Type: "inotify",
+				expectedEvent := ExpectedFsnotifyEvent{
+					Type: "inotify",
 
-				// 	IMask: 134217732, // 134217736 = 0x08000008 = FS_CLOSE_WRITE | FS_EVENT_ON_CHILD
-				// 	Name:  filename,
+					IMask: 0x08000002, // FS_MODIFY | FS_EVENT_ON_CHILD
+					Name:  filename,
 
-				// 	Timestamp: utils.NormalizedStr,
+					Timestamp: utils.NormalizedStr,
 
-				// 	TraceeMntnsId: utils.NormalizedInt,
-				// 	TracerMntnsId: utils.NormalizedInt,
+					TraceeMntnsId: utils.NormalizedInt,
+					TracerMntnsId: utils.NormalizedInt,
 
-				// 	FaType:     utils.NormalizedStr,
-				// 	FaResponse: utils.NormalizedStr,
+					FaType:     utils.NormalizedStr,
+					FaResponse: utils.NormalizedStr,
 
-				// 	IWd:     utils.NormalizedInt,
-				// 	IIno:    utils.NormalizedInt,
-				// 	IInoDir: utils.NormalizedInt,
-				// }
-				// fmt.Printf("EXPECTED -----------------------------------------\n")
-				// expectedEvent.Print()
-				// fmt.Printf("EXPECTED -----------------------------------------\n")
+					IWd:     utils.NormalizedInt,
+					IIno:    utils.NormalizedInt,
+					IInoDir: utils.NormalizedInt,
+				}
+				fmt.Printf("EXPECTED -----------------------------------------\n")
+				expectedEvent.Print()
+				fmt.Printf("EXPECTED -----------------------------------------\n")
 			
 				utilstest.ExpectAtLeastOneEvent(func(info *utilstest.RunnerInfo, pid int) *ExpectedFsnotifyEvent {
 					return &ExpectedFsnotifyEvent{
 						Type: "inotify",
 
-						IMask: 134217732, // 134217732 = 0x08000004 = FS_ATTRIB | FS_EVENT_ON_CHILD
+						IMask: 0x08000002, // FS_MODIFY | FS_EVENT_ON_CHILD
 						Name:  filename,
 
 						Timestamp: utils.NormalizedStr,
@@ -285,21 +285,7 @@ func generateEvent() (string, error) {
 	}
 	defer newFile.Close()
 
-	// write
 	_, err = newFile.WriteString("Hello, fsnotify!")
-	if err != nil {
-		return "", err
-	}
-
-	// read
-	content, err := os.ReadFile(newFile.Name())
-	if err != nil {
-		return "", err
-	}
-	fmt.Println("File content:", string(content))
-
-	// rename
-	err = os.Rename(newFile.Name(), newFile.Name()+"_renamed")
 	if err != nil {
 		return "", err
 	}
