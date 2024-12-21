@@ -17,6 +17,8 @@ package tests
 import (
 	"fmt"
 	"os"
+	"path"
+	"syscall"
 	"strings"
 	"testing"
 	"time"
@@ -290,6 +292,32 @@ func generateEvent() (string, error) {
 		return "", err
 	}
 
+
+	// Ino
+	fileInfo, err := os.Stat(newFile.Name())
+	if err != nil {
+		return "", err
+	}
+	fileSys := fileInfo.Sys()
+	var inode uint64
+	if stat, ok := fileSys.(*syscall.Stat_t); ok {
+		inode = uint64(stat.Ino)
+	}
+	fmt.Printf("Inode of File: %d\n", inode)
+
+	// InoDir
+	dirInfo, err := os.Stat(path.Dir(newFile.Name()))
+	if err != nil {
+		return "", err
+	}
+	dirSys := dirInfo.Sys()
+	var dirInode uint64
+	if dirStat, ok := dirSys.(*syscall.Stat_t); ok {
+		dirInode = uint64(dirStat.Ino)
+	}
+	fmt.Printf("Inode of Directory: %d\n", dirInode)
+
+	
 	fileName := path.Base(newFile.Name())
 	return fileName, nil
 }
