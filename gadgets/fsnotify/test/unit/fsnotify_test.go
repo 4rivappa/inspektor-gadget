@@ -18,7 +18,6 @@ import (
 	"fmt"
 	"os"
 	"path"
-	"strings"
 	"syscall"
 	"testing"
 	"time"
