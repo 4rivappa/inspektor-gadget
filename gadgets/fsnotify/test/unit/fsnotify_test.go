@@ -58,8 +58,8 @@ func (p *Process) Print(extraInfo string) {
 
 type EventDetails struct {
 	FileName string
-	Ino      uint64
-	InoDir   uint64
+	Ino      uint32
+	InoDir   uint32
 }
 
 // func (r *utilstest.RunnerInfo) Print() {
@@ -306,13 +306,13 @@ func generateEvent() (EventDetails, error) {
 	fileName := path.Base(newFile.Name())
 	eventDetails := EventDetails{
 		FileName: fileName,
-		Ino:      inode,
-		InoDir:   dirInode,
+		Ino:      uint32(inode),
+		InoDir:   uint32(dirInode),
 	}
 	return eventDetails, nil
 }
 
-func calculateInodeValues(fileName string) (inode, dirInode, err) {
+func calculateInodeValues(fileName string) (uint64, uint64, error) {
 	// collect Inode information about file
 	fileInfo, err := os.Stat(fileName)
 	if err != nil {
