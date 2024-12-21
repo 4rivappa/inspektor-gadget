@@ -145,6 +145,8 @@ func TestFsnotifyGadget(t *testing.T) {
 			generateEvent: generateEvent,
 			validateEvent: func(t *testing.T, info *utilstest.RunnerInfo, filename string, events []ExpectedFsnotifyEvent) {
 
+				fmt.Println("Length of events:", len(events))
+
 				fmt.Printf("--------------------------------------------------\n")
 				fmt.Printf("YOU ARE LOOKING FOR THIS SECTION\n")
 				fmt.Printf("--------------------------------------------------\n")
@@ -277,7 +279,7 @@ func generateEvent() (string, error) {
 		return "", err
 	}
 
-	newFile, err := os.CreateTemp("", "test-*.txt")
+	newFile, err := os.CreateTemp(os.TempDir(), "test-*.txt")
 	if err != nil {
 		return "", err
 	}
