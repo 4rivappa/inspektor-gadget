@@ -144,7 +144,7 @@ func TestFsnotifyGadget(t *testing.T) {
 			}
 			opts := gadgetrunner.GadgetRunnerOpts[ExpectedFsnotifyEvent]{
 				Image:          "fsnotify",
-				Timeout:        10 * time.Second,
+				Timeout:        5 * time.Second,
 				OnGadgetRun:    onGadgetRun,
 				NormalizeEvent: normalizeEvent,
 			}
