@@ -184,11 +184,11 @@ func generateEvent() (EventDetails, error) {
 	}
 
 	// Get inode values of test file and its parent directory
-	fileInode, err := inode.GetInode(filePath)
+	fileInode, err := inode.GetInode(newFile.Name())
 	if err != nil {
 		return EventDetails{}, err
 	}
-	dirInode, err := inode.GetInode(path.Dir(filePath))
+	dirInode, err := inode.GetInode(path.Dir(newFile.Name()))
 	if err != nil {
 		return EventDetails{}, err
 	}
