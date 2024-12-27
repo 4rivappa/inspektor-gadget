@@ -25,7 +25,7 @@ func GetInode(path string) (uint64, error) {
 	// Get information about the given path (file or directory)
 	fileInfo, err := os.Stat(path)
 	if err != nil {
-		return 0, fmt.Errorf("failed to stat path %s: %w", path, err)
+		return 0, fmt.Errorf("could not stat path %s: %w", path, err)
 	}
 
 	// Extract the inode value from the system information
@@ -33,5 +33,5 @@ func GetInode(path string) (uint64, error) {
 	if stat, ok := sysInfo.(*syscall.Stat_t); ok {
 		return uint64(stat.Ino), nil
 	}
-	return 0, fmt.Errorf("failed to assert system info as *syscall.Stat_t for path: %s", path)
+	return 0, fmt.Errorf("unable to assert system info as *syscall.Stat_t for path: %s", path)
 }
