@@ -100,13 +100,13 @@ func TestFsnotifyGadget(t *testing.T) {
 
 						Type:  "inotify",
 						IMask: 0x08000002, // FS_MODIFY | FS_EVENT_ON_CHILD
-						
+
 						TraceeMntnsId: info.MountNsID,
 						TracerMntnsId: utils.NormalizedInt,
-						
+
 						FaType:     utils.NormalizedStr,
 						FaResponse: utils.NormalizedStr,
-						
+
 						IWd:     utils.NormalizedInt,
 						IIno:    eventDetails.Ino,
 						IInoDir: eventDetails.InoDir,
@@ -183,11 +183,16 @@ func generateEvent() (EventDetails, error) {
 		return EventDetails{}, err
 	}
 
-	fileInode, dirInode, err := inode.ExtractFileAndDirInodes(newFile.Name())
+	// Get inode values of test file and its parent directory
+	fileInode, err := inode.GetInode(filePath)
 	if err != nil {
 		return EventDetails{}, err
 	}
-	
+	dirInode, err := inode.GetInode(path.Dir(filePath))
+	if err != nil {
+		return EventDetails{}, err
+	}
+
 	fileName := path.Base(newFile.Name())
 	eventDetails := EventDetails{
 		FileName: fileName,

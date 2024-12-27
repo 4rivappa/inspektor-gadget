@@ -17,39 +17,21 @@ package inode
 import (
 	"fmt"
 	"os"
-	"path"
 	"syscall"
 )
 
-// ExtractFileAndDirInodes extracts the inode values for a given file and its parent directory
-func ExtractFileAndDirInodes(fileName string) (uint64, uint64, error) {
-	// Extract inode info about the file
-	fileInfo, err := os.Stat(fileName)
+// GetInode extracts the inode of a given path
+func GetInode(path string) (uint64, error) {
+	// Get information about the given path (file or directory)
+	fileInfo, err := os.Stat(path)
 	if err != nil {
-		return 0, 0, fmt.Errorf("failed to stat file %s: %w", fileName, err)
+		return 0, fmt.Errorf("failed to stat path %s: %w", path, err)
 	}
 
-	fileSys := fileInfo.Sys()
-	var inode uint64
-	if stat, ok := fileSys.(*syscall.Stat_t); ok {
-		inode = uint64(stat.Ino)
-	} else {
-		return 0, 0, fmt.Errorf("failed to assert file sys as *syscall.Stat_t")
+	// Extract the inode value from the system information
+	sysInfo := fileInfo.Sys()
+	if stat, ok := sysInfo.(*syscall.Stat_t); ok {
+		return uint64(stat.Ino), nil
 	}
-
-	// Extract inode info about the parent directory
-	dirInfo, err := os.Stat(path.Dir(fileName))
-	if err != nil {
-		return 0, 0, fmt.Errorf("failed to stat directory of %s: %w", fileName, err)
-	}
-
-	dirSys := dirInfo.Sys()
-	var dirInode uint64
-	if dirStat, ok := dirSys.(*syscall.Stat_t); ok {
-		dirInode = uint64(dirStat.Ino)
-	} else {
-		return 0, 0, fmt.Errorf("failed to assert directory sys as *syscall.Stat_t")
-	}
-
-	return inode, dirInode, nil
+	return 0, fmt.Errorf("failed to assert system info as *syscall.Stat_t for path: %s", path)
 }
