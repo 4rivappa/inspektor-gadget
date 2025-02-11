@@ -90,7 +90,7 @@ func (e *ExpectedFsnotifyEvent) Print() {
 	fmt.Printf("TraceeMntnsId: %d, TracerMntnsId: %d\n", e.TraceeMntnsId, e.TracerMntnsId)
 	fmt.Printf("TraceeUId: %d, TraceeGId: %d, TracerUId: %d, TracerGId: %d\n", e.TraceeUId, e.TraceeGId, e.TracerUId, e.TracerGId)
 	fmt.Printf("Prio: %d\n", e.Prio)
-	fmt.Printf("FaMask: %d, IMask: %d\n", e.FaMask, e.IMask)
+	fmt.Printf("FaMask: %s, IMask: %s\n", e.FaMask, e.IMask)
 	fmt.Printf("FaType: %s, FaPId: %d, FaFlags: %d, FaFFlags: %d, FaResponse: %s\n", e.FaType, e.FaPId, e.FaFlags, e.FaFFlags, e.FaResponse)
 	fmt.Printf("IWd: %d, ICookie: %d, IIno: %d, IInoDir: %d\n", e.IWd, e.ICookie, e.IIno, e.IInoDir)
 	fmt.Printf("File Name: %s\n", e.Name)
