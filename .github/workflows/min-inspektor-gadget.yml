@@ -27,7 +27,7 @@ jobs:
           registry: ${{ env.REGISTRY }}
           container-image: ${{ env.CONTAINER_REPO }}
       - name: Setup go
-        uses: actions/setup-go@41dfa10bad2bb2ae585af6ee5bb4d7d973ad74ed # v5.1.0
+        uses: actions/setup-go@f111f3307d8850f501ac008e886eec1fd1932a34 # v5.3.0
         with:
           go-version: ${{ env.GO_VERSION }}
           cache: true
@@ -35,10 +35,16 @@ jobs:
       - name: Gadgets tests
         id: gadgets-tests
         shell: bash
+        env:
+          IG_VERIFY_IMAGE: false
         run: |
-          set -o pipefail
-          make \
-          # GADGET_REPOSITORY=${{ steps.set-repo-determine-image-tag.outputs.gadget-repository }} \
-          # GADGET_TAG=${{ steps.set-repo-determine-image-tag.outputs.gadget-tag }} \
-          IG_VERIFY_IMAGE=false \
-          -C gadgets/ test-unit -o build |& tee gadgets-tests.log & wait $!
+            set -o pipefail
+            make -C gadgets/ test-unit -o build |& tee gadgets-tests.log & wait $!
+      - name: Prepare and publish test reports
+        if: always()
+        continue-on-error: true
+        uses: ./.github/actions/prepare-and-publish-test-reports
+        with:
+          test-log-file: gadgets-tests.log
+          test-step-conclusion: ${{ steps.gadgets-tests.conclusion }}
+          test-summary-suffix: "gadgets-unittest"
