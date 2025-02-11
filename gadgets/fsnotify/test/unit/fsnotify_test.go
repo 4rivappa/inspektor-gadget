@@ -116,12 +116,12 @@ func TestFsnotifyGadget(t *testing.T) {
 					fmt.Println("----------------------------------------------------------------------------------")
 				}
 				utilstest.ExpectAtLeastOneEvent(func(info *utilstest.RunnerInfo, pid int) *ExpectedFsnotifyEvent {
+					
 					return &ExpectedFsnotifyEvent{
 						Timestamp: utils.NormalizedStr,
 
-						Type:   "inotify",
-						IMask:  utils.NormalizedStr,
-						FaMask: utils.NormalizedStr,
+						Type:  "inotify",
+						IMask: "IN_MODIFY",
 
 						TraceeMntnsId: info.MountNsID,
 						TracerMntnsId: utils.NormalizedInt,
