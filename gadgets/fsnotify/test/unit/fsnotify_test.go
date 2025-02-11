@@ -119,8 +119,9 @@ func TestFsnotifyGadget(t *testing.T) {
 					return &ExpectedFsnotifyEvent{
 						Timestamp: utils.NormalizedStr,
 
-						Type:  "inotify",
-						IMask: 0x08000002, // FS_MODIFY | FS_EVENT_ON_CHILD
+						Type:   "inotify",
+						IMask:  utils.NormalizedStr,
+						FaMask: utils.NormalizedStr,
 
 						TraceeMntnsId: info.MountNsID,
 						TracerMntnsId: utils.NormalizedInt,
