@@ -8,7 +8,7 @@ on:
   pull_request:
   push:
     branches:
-    - main
+      - main
 
 permissions: read-all
 
@@ -36,9 +36,9 @@ jobs:
         id: gadgets-tests
         shell: bash
         run: |
-            set -o pipefail
-            make \
-            GADGET_REPOSITORY=${{ steps.set-repo-determine-image-tag.outputs.gadget-repository }} \
-            GADGET_TAG=${{ steps.set-repo-determine-image-tag.outputs.gadget-tag }} \
-            IG_VERIFY_IMAGE=false \
-            -C gadgets/ test-unit -o build |& tee gadgets-tests.log & wait $!
+          set -o pipefail
+          make \
+          # GADGET_REPOSITORY=${{ steps.set-repo-determine-image-tag.outputs.gadget-repository }} \
+          # GADGET_TAG=${{ steps.set-repo-determine-image-tag.outputs.gadget-tag }} \
+          IG_VERIFY_IMAGE=false \
+          -C gadgets/ test-unit -o build |& tee gadgets-tests.log & wait $!
