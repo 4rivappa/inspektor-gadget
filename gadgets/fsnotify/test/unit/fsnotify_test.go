@@ -81,21 +81,6 @@ type ExpectedFsnotifyEvent struct {
 	Name string `json:"name"`
 }
 
-// Print method for ExpectedFsnotifyEvent
-func (e *ExpectedFsnotifyEvent) Print() {
-	fmt.Printf("Timestamp: %s\n", e.Timestamp)
-	fmt.Printf("Type: %s\n", e.Type)
-	fmt.Printf("TraceeProc - PPid: %d, Pid: %d, Tid: %d, Comm: %s, PComm: %s\n", e.TraceeProc.PPid, e.TraceeProc.Pid, e.TraceeProc.Tid, e.TraceeProc.Comm, e.TraceeProc.PComm)
-	fmt.Printf("TracerProc - PPid: %d, Pid: %d, Tid: %d, Comm: %s, PComm: %s\n", e.TracerProc.PPid, e.TracerProc.Pid, e.TracerProc.Tid, e.TracerProc.Comm, e.TracerProc.PComm)
-	fmt.Printf("TraceeMntnsId: %d, TracerMntnsId: %d\n", e.TraceeMntnsId, e.TracerMntnsId)
-	fmt.Printf("TraceeUId: %d, TraceeGId: %d, TracerUId: %d, TracerGId: %d\n", e.TraceeUId, e.TraceeGId, e.TracerUId, e.TracerGId)
-	fmt.Printf("Prio: %d\n", e.Prio)
-	fmt.Printf("FaMask: %s, IMask: %s\n", e.FaMask, e.IMask)
-	fmt.Printf("FaType: %s, FaPId: %d, FaFlags: %d, FaFFlags: %d, FaResponse: %s\n", e.FaType, e.FaPId, e.FaFlags, e.FaFFlags, e.FaResponse)
-	fmt.Printf("IWd: %d, ICookie: %d, IIno: %d, IInoDir: %d\n", e.IWd, e.ICookie, e.IIno, e.IInoDir)
-	fmt.Printf("File Name: %s\n", e.Name)
-}
-
 type testDef struct {
 	runnerConfig  *utilstest.RunnerConfig
 	generateEvent func() (EventDetails, error)
@@ -111,12 +96,7 @@ func TestFsnotifyGadget(t *testing.T) {
 			runnerConfig:  runnerConfig,
 			generateEvent: generateEvent,
 			validateEvent: func(t *testing.T, info *utilstest.RunnerInfo, eventDetails EventDetails, events []ExpectedFsnotifyEvent) {
-				for _, event := range events {
-					event.Print()
-					fmt.Println("----------------------------------------------------------------------------------")
-				}
 				utilstest.ExpectAtLeastOneEvent(func(info *utilstest.RunnerInfo, pid int) *ExpectedFsnotifyEvent {
-					
 					return &ExpectedFsnotifyEvent{
 						Timestamp: utils.NormalizedStr,
 
