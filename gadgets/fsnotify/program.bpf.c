@@ -340,6 +340,7 @@ int BPF_KPROBE(fsnotify_insert_event_e, struct fsnotify_group *group,
 	ee->tracee_uid_raw = (u32)uid_gid;
 	ee->tracee_gid_raw = (u32)(uid_gid >> 32);
 
+    // changed to 0, testing 6.10 changes for debugging
 	ee->prio = 0;
 
 	if (value) {
@@ -447,7 +448,7 @@ int BPF_KPROBE(fsnotify_destroy_event, struct fsnotify_group *group,
 
 	gadget_event->type_raw = fa_resp;
 	gadget_event->fa_type_raw = fa_type;
-	gadget_event->prio = BPF_CORE_READ(group, priority);
+	gadget_event->prio = 0;
 
 	gadget_event->timestamp_raw = bpf_ktime_get_boot_ns();
 
