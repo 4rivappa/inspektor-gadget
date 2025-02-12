@@ -666,7 +666,13 @@ func (i *ebpfInstance) Start(gadgetCtx operators.GadgetContext) error {
 		opts.Programs.KernelTypes = btfSpec
 	}
 	collection, err := ebpf.NewCollectionWithOptions(i.collectionSpec, opts)
+    for progName, _ := range i.collectionSpec.Programs {
+		fmt.Printf("program: %s\n", progName)
+	}
+
 	if err != nil {
+		fmt.Printf("New collection With options Err: %+v\n", err)
+
 		var verifierErr *ebpf.VerifierError
 		if errors.As(err, &verifierErr) {
 			gadgetCtx.Logger().Debugf("running gadget: verifier error: %+v\n", verifierErr)
