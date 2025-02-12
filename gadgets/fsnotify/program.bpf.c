@@ -340,7 +340,7 @@ int BPF_KPROBE(fsnotify_insert_event_e, struct fsnotify_group *group,
 	ee->tracee_uid_raw = (u32)uid_gid;
 	ee->tracee_gid_raw = (u32)(uid_gid >> 32);
 
-	ee->prio = BPF_CORE_READ(group, priority);
+	ee->prio = 0;
 
 	if (value) {
 		ee->type = value->type;
