@@ -190,6 +190,9 @@ func (g *GadgetRunner[T]) RunGadget() {
 		require.NoError(g.testCtx, err, "before gadget run error")
 	}
 	err = runtime.RunGadget(g.gadgetCtx, g.runtimeParams, g.paramValues)
+	if err != nil {
+		fmt.Println("Running Gadget Error:", err)
+	}
 	require.NoError(g.testCtx, err, "running gadget error")
 }
 
