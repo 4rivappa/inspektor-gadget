@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"math"
 	"os"
+	"log"
 	"strings"
 	"sync"
 	"testing"
@@ -192,6 +193,16 @@ func (g *GadgetRunner[T]) RunGadget() {
 	err = runtime.RunGadget(g.gadgetCtx, g.runtimeParams, g.paramValues)
 	if err != nil {
 		fmt.Println("Running Gadget Error:", err)
+		fmt.Printf("Running Gadget Error: %+v\n", err)
+
+		logFile, err := os.OpenFile("/gadget_error.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0666)
+		if err != nil {
+			log.Fatal(err)
+		}
+		defer logFile.Close()
+
+		logger := log.New(logFile, "ERROR: ", log.Ldate|log.Ltime|log.Llongfile)
+		logger.Println("Running Gadget Error:", err)
 	}
 	require.NoError(g.testCtx, err, "running gadget error")
 }

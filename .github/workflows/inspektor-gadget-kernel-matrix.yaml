@@ -87,6 +87,11 @@ jobs:
           make -C gadgets/ pull
           make -C gadgets/ test-unit -o build |& tee gadgets-kernel-tests.log & wait $!
       
+      - name: Print Error Log
+        if: always()
+        run: |
+          cat /gadget_error.log
+      
       - name: Prepare and publish test reports
         if: always()
         continue-on-error: true
