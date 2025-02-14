@@ -29,7 +29,6 @@ import (
 	"github.com/inspektor-gadget/inspektor-gadget/pkg/operators"
 	"github.com/inspektor-gadget/inspektor-gadget/pkg/testing/gadgetrunner"
 	"github.com/inspektor-gadget/inspektor-gadget/pkg/testing/utils"
-	"github.com/inspektor-gadget/inspektor-gadget/pkg/utils/inode"
 )
 
 type Process struct {
@@ -88,6 +87,7 @@ type testDef struct {
 }
 
 func TestFsnotifyGadget(t *testing.T) {
+	gadgettesting.MinimumKernelVersion(t, "5.10")
 	gadgettesting.InitUnitTest(t)
 	runnerConfig := &utilstest.RunnerConfig{}
 
@@ -208,11 +208,11 @@ forLoop:
 	}
 
 	// Get inode values of test file and its parent directory
-	fileInode, err := inode.GetInode(newFile.Name())
+	fileInode, err := utils.GetInode(newFile.Name())
 	if err != nil {
 		return EventDetails{}, err
 	}
-	dirInode, err := inode.GetInode(path.Dir(newFile.Name()))
+	dirInode, err := utils.GetInode(path.Dir(newFile.Name()))
 	if err != nil {
 		return EventDetails{}, err
 	}
