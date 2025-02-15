@@ -16,6 +16,9 @@ package tests
 
 import (
 	"fmt"
+	"io"
+	"log"
+	"net"
 	"testing"
 	"time"
 
@@ -110,18 +113,18 @@ func generateEvent() (EventDetails, error) {
 	startTime := time.Now()
 	conn, err := net.Dial("tcp", "localhost:8080")
 	if err != nil {
-		return 0, fmt.Errorf("could not connect to server: %v", err)
+		return EventDetails{}, fmt.Errorf("could not connect to server: %v", err)
 	}
 	defer conn.Close()
 	message := []byte("ping")
 	_, err = conn.Write(message)
 	if err != nil {
-		return 0, fmt.Errorf("could not send message: %v", err)
+		return EventDetails{}, fmt.Errorf("could not send message: %v", err)
 	}
 	buffer := make([]byte, len(message))
 	_, err = conn.Read(buffer)
 	if err != nil {
-		return 0, fmt.Errorf("could not read response: %v", err)
+		return EventDetails{}, fmt.Errorf("could not read response: %v", err)
 	}
 	rtt := time.Since(startTime)
 
