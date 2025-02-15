@@ -150,6 +150,9 @@ func handleConnection(conn net.Conn) {
 		}
 		return
 	}
+
+	time.Sleep(2 * time.Second)
+
 	_, err = conn.Write(buffer)
 	if err != nil {
 		log.Println("Error writing:", err)
