@@ -104,5 +104,60 @@ func TestFsnotifyGadget(t *testing.T) {
 }
 
 func generateEvent() (EventDetails, error) {
+	go startServer()
+	time.Sleep(1 * time.Second)
+
+	startTime := time.Now()
+	conn, err := net.Dial("tcp", "localhost:8080")
+	if err != nil {
+		return 0, fmt.Errorf("could not connect to server: %v", err)
+	}
+	defer conn.Close()
+	message := []byte("ping")
+	_, err = conn.Write(message)
+	if err != nil {
+		return 0, fmt.Errorf("could not send message: %v", err)
+	}
+	buffer := make([]byte, len(message))
+	_, err = conn.Read(buffer)
+	if err != nil {
+		return 0, fmt.Errorf("could not read response: %v", err)
+	}
+	rtt := time.Since(startTime)
+
+	fmt.Printf("DEBUG: TCP RTT: %v\n", rtt)
+
 	return EventDetails{}, nil
+}
+
+func handleConnection(conn net.Conn) {
+	defer conn.Close()
+	buffer := make([]byte, 1024)
+	_, err := conn.Read(buffer)
+	if err != nil {
+		if err != io.EOF {
+			log.Println("Error reading:", err)
+		}
+		return
+	}
+	_, err = conn.Write(buffer)
+	if err != nil {
+		log.Println("Error writing:", err)
+	}
+}
+
+func startServer() {
+	ln, err := net.Listen("tcp", ":8080")
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer ln.Close()
+	fmt.Println("Server listening on port 8080...")
+	for {
+		conn, err := ln.Accept()
+		if err != nil {
+			log.Fatal(err)
+		}
+		go handleConnection(conn)
+	}
 }
