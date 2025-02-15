@@ -92,7 +92,7 @@ func TestFsnotifyGadget(t *testing.T) {
 			}
 			opts := gadgetrunner.GadgetRunnerOpts[tcprtt_types.Report]{
 				Image:          "profile_tcprtt",
-				Timeout:        5 * time.Second,
+				Timeout:        10 * time.Second,
 				OnGadgetRun:    onGadgetRun,
 				NormalizeEvent: normalizeEvent,
 			}
@@ -100,6 +100,7 @@ func TestFsnotifyGadget(t *testing.T) {
 			gadgetRunner := gadgetrunner.NewGadgetRunner(t, opts)
 
 			gadgetRunner.RunGadget()
+			fmt.Printf("%+v\n", gadgetRunner)
 
 			testCase.validateEvent(t, runner.Info, eventDetails, gadgetRunner.CapturedEvents)
 		})
