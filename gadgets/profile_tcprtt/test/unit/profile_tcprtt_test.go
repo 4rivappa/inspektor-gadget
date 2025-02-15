@@ -41,7 +41,7 @@ type testDef struct {
 	validateEvent func(t *testing.T, info *utilstest.RunnerInfo, eventDetails EventDetails, events []tcprtt_types.Report)
 }
 
-func TestFsnotifyGadget(t *testing.T) {
+func TestProfileTCPRTTGadget(t *testing.T) {
 	gadgettesting.InitUnitTest(t)
 	runnerConfig := &utilstest.RunnerConfig{}
 
@@ -90,9 +90,15 @@ func TestFsnotifyGadget(t *testing.T) {
 				})
 				return nil
 			}
+
+			params := map[string]string{
+				"targ_dport": "8080",
+			}
+
 			opts := gadgetrunner.GadgetRunnerOpts[tcprtt_types.Report]{
 				Image:          "profile_tcprtt",
 				Timeout:        10 * time.Second,
+				ParamValues:    params,
 				OnGadgetRun:    onGadgetRun,
 				NormalizeEvent: normalizeEvent,
 			}

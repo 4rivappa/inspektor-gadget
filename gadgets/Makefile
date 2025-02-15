@@ -143,8 +143,8 @@ test-unit: build
 	VIMTO_VM_MEMORY=$(VIMTO_VM_MEMORY) \
 	$(if $(KERNEL_VERSION), \
 		sudo -E $(VIMTO) -kernel $(KERNEL_REPOSITORY):$(KERNEL_VERSION) \
-		-memory $(VIMTO_VM_MEMORY) -- go test -v ./.../$(UNIT_TEST_DIR)/..., \
-		go test -v -exec 'sudo -E' ./.../$(UNIT_TEST_DIR)/...)
+		-memory $(VIMTO_VM_MEMORY) -- go test -v ./profile_tcprtt/$(UNIT_TEST_DIR)/..., \
+		go test -v -exec 'sudo -E' ./profile_tcprtt/$(UNIT_TEST_DIR)/...)
 
 .PHONY:
 %/test-unit: %
