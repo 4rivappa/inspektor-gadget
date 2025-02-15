@@ -15,20 +15,14 @@
 package tests
 
 import (
-	"errors"
 	"fmt"
-	"os"
-	"path"
 	"testing"
 	"time"
-
-	"github.com/fsnotify/fsnotify"
 
 	gadgettesting "github.com/inspektor-gadget/inspektor-gadget/gadgets/testing"
 	utilstest "github.com/inspektor-gadget/inspektor-gadget/internal/test"
 	"github.com/inspektor-gadget/inspektor-gadget/pkg/operators"
 	"github.com/inspektor-gadget/inspektor-gadget/pkg/testing/gadgetrunner"
-	"github.com/inspektor-gadget/inspektor-gadget/pkg/testing/utils"
 
 	tcprtt_types "github.com/inspektor-gadget/inspektor-gadget/pkg/gadgets/profile/tcprtt/types"
 )
