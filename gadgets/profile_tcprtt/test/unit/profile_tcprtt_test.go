@@ -92,7 +92,7 @@ func TestProfileTCPRTTGadget(t *testing.T) {
 			}
 
 			params := map[string]string{
-				"targ_dport": "8080",
+				"targ_sport": "8080",
 				"targ_ms":    "true",
 			}
 
