@@ -3,8 +3,7 @@ on:
   push:
     # Only the default branch is supported.
     branches:
-    # - main
-    - not-exists
+    - main
   schedule:
     # Daily
     - cron: '30 1 * * *'
