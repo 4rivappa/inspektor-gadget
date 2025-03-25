@@ -102,6 +102,7 @@ func NewBuildCmd() *cobra.Command {
 	cmd.Flags().StringVarP(&opts.outputDir, "output", "o", "", "Path to a folder to store generated files while building")
 	cmd.Flags().StringVarP(&opts.image, "tag", "t", "", "Name for the built image (format name:tag)")
 	cmd.Flags().StringVar(&opts.builderImage, "builder-image", builderImage, "Builder image to use")
+	cmd.Flags().StringVar(&opts.builderImagePull, "builder-image-pull", "always", "Specify when the builder image should be pulled [always, missing, never]")
 	cmd.Flags().BoolVar(&opts.updateMetadata, "update-metadata", false, "Update the metadata according to the eBPF code")
 	cmd.Flags().BoolVar(&opts.validateMetadata, "validate-metadata", true, "Validate the metadata file before building the gadget image")
 
@@ -301,28 +302,9 @@ func runBuild(cmd *cobra.Command, opts *cmdOpts) error {
 	return nil
 }
 
-func ensureBuilderImage(ctx context.Context, cli *client.Client, builderImage string) error {
-	f := filters.NewArgs()
-	f.Add("reference", builderImage)
-
-	// For :main we always want to have the newest image that is available upstream
-	if !strings.HasSuffix(builderImage, ":main") {
-		images, err := cli.ImageList(ctx, image.ListOptions{Filters: f})
-		if err != nil {
-			return fmt.Errorf("listing images: %w", err)
-		}
-
-		for _, img := range images {
-			for _, tag := range img.RepoTags {
-				if tag == builderImage {
-					return nil
-				}
-			}
-		}
-	}
-
+func pullImage(ctx context.Context, cli *client.Client, builderImage string) error {
 	fmt.Printf("Pulling builder image %s\n", builderImage)
-	reader, err := cli.ImagePull(ctx, builderImage, image.PullOptions{})
+	reader, err := cli.ImagePull(ctx, builderImage, types.ImagePullOptions{})
 	if err != nil {
 		return fmt.Errorf("pulling builder image: %w", err)
 	}
@@ -332,6 +314,52 @@ func ensureBuilderImage(ctx context.Context, cli *client.Client, builderImage st
 	outFd := out.Fd()
 	isTTY := term.IsTerminal(int(outFd))
 	return jsonmessage.DisplayJSONMessagesStream(reader, out, outFd, isTTY, nil)
+}
+
+func isImageLocallyAvailable(ctx context.Context, cli *client.Client, builderImage string) (bool, error) {
+	f := filters.NewArgs()
+	f.Add("reference", builderImage)
+
+	images, err := cli.ImageList(ctx, types.ImageListOptions{Filters: f})
+	if err != nil {
+		return false, fmt.Errorf("listing images: %w", err)
+	}
+
+	for _, img := range images {
+		for _, tag := range img.RepoTags {
+			if tag == builderImage {
+				return true, nil
+			}
+		}
+	}
+	return false, nil
+}
+
+func ensureBuilderImage(ctx context.Context, cli *client.Client, builderImage string, builderImagePull string) error {
+	switch builderImagePull {
+	case "always":
+		return pullImage(ctx, cli, builderImage)
+	case "missing":
+		localAvailable, err := isImageLocallyAvailable(ctx, cli, builderImage)
+		if err != nil {
+			return err
+		}
+		if !localAvailable {
+			return pullImage(ctx, cli, builderImage)
+		}
+	case "never":
+		localAvailable, err := isImageLocallyAvailable(ctx, cli, builderImage)
+		if err != nil {
+			return err
+		}
+		if !localAvailable {
+			return fmt.Errorf("image %s is not available locally and pull is disabled", builderImage)
+		}
+	default:
+		return fmt.Errorf("invalid builderImagePull value: %s", builderImagePull)
+	}
+
+	return nil
 }
 
 func buildInContainer(opts *cmdOpts, conf *buildFile) error {
@@ -347,7 +375,7 @@ func buildInContainer(opts *cmdOpts, conf *buildFile) error {
 	}
 	defer cli.Close()
 
-	if err := ensureBuilderImage(ctx, cli, opts.builderImage); err != nil {
+	if err := ensureBuilderImage(ctx, cli, opts.builderImage, opts.builderImagePull); err != nil {
 		return err
 	}
 
