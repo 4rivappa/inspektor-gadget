@@ -69,6 +69,7 @@ type cmdOpts struct {
 	local            bool
 	outputDir        string
 	builderImage     string
+	builderImagePull string
 	updateMetadata   bool
 	validateMetadata bool
 	btfgen           bool
@@ -304,7 +305,7 @@ func runBuild(cmd *cobra.Command, opts *cmdOpts) error {
 
 func pullImage(ctx context.Context, cli *client.Client, builderImage string) error {
 	fmt.Printf("Pulling builder image %s\n", builderImage)
-	reader, err := cli.ImagePull(ctx, builderImage, types.ImagePullOptions{})
+	reader, err := cli.ImagePull(ctx, builderImage, image.PullOptions{})
 	if err != nil {
 		return fmt.Errorf("pulling builder image: %w", err)
 	}
@@ -320,7 +321,7 @@ func isImageLocallyAvailable(ctx context.Context, cli *client.Client, builderIma
 	f := filters.NewArgs()
 	f.Add("reference", builderImage)
 
-	images, err := cli.ImageList(ctx, types.ImageListOptions{Filters: f})
+	images, err := cli.ImageList(ctx, image.ListOptions{Filters: f})
 	if err != nil {
 		return false, fmt.Errorf("listing images: %w", err)
 	}
