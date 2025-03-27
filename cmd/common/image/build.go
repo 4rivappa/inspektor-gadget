@@ -89,6 +89,19 @@ func NewBuildCmd() *cobra.Command {
 				return fmt.Errorf("--local and --builder-image cannot be used at the same time")
 			}
 
+			// Validate builderImagePull flag by checking it against a list of valid values
+			validValues := []string{"always", "missing", "never"}
+			isBuilderImagePullStrValid := false
+			for _, v := range validValues {
+				if opts.builderImagePull == v {
+					isBuilderImagePullStrValid = true
+					break
+				}
+			}
+			if !isBuilderImagePullStrValid {
+				return fmt.Errorf("invalid value for --builder-image-pull: %s. Valid values are 'always', 'missing', 'never'", opts.builderImagePull)
+			}
+
 			fFlag := cmd.Flags().Lookup("file")
 			opts.fileChanged = fFlag.Changed
 
@@ -317,9 +330,9 @@ func pullImage(ctx context.Context, cli *client.Client, builderImage string) err
 	return jsonmessage.DisplayJSONMessagesStream(reader, out, outFd, isTTY, nil)
 }
 
-func isImageLocallyAvailable(ctx context.Context, cli *client.Client, builderImage string) (bool, error) {
+func isImageLocallyAvailable(ctx context.Context, cli *client.Client, image string) (bool, error) {
 	f := filters.NewArgs()
-	f.Add("reference", builderImage)
+	f.Add("reference", image)
 
 	images, err := cli.ImageList(ctx, image.ListOptions{Filters: f})
 	if err != nil {
@@ -328,7 +341,7 @@ func isImageLocallyAvailable(ctx context.Context, cli *client.Client, builderIma
 
 	for _, img := range images {
 		for _, tag := range img.RepoTags {
-			if tag == builderImage {
+			if tag == image {
 				return true, nil
 			}
 		}
@@ -359,8 +372,6 @@ func ensureBuilderImage(ctx context.Context, cli *client.Client, builderImage st
 	default:
 		return fmt.Errorf("invalid builderImagePull value: %s", builderImagePull)
 	}
-
-	return nil
 }
 
 func buildInContainer(opts *cmdOpts, conf *buildFile) error {
