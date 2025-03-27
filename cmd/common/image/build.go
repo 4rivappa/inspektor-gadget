@@ -91,14 +91,14 @@ func NewBuildCmd() *cobra.Command {
 
 			// Validate builderImagePull flag by checking it against a list of valid values
 			validValues := []string{"always", "missing", "never"}
-			isBuilderImagePullStrValid := false
+			isValidBuilderImagePull := false
 			for _, v := range validValues {
 				if opts.builderImagePull == v {
-					isBuilderImagePullStrValid = true
+					isValidBuilderImagePull = true
 					break
 				}
 			}
-			if !isBuilderImagePullStrValid {
+			if !isValidBuilderImagePull {
 				return fmt.Errorf("invalid value for --builder-image-pull: %s. Valid values are 'always', 'missing', 'never'", opts.builderImagePull)
 			}
 
