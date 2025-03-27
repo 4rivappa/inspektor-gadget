@@ -14,12 +14,12 @@ require (
 	github.com/cyphar/filepath-securejoin v0.4.1
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc
 	github.com/distribution/reference v0.6.0
-	github.com/docker/cli v28.0.2+incompatible
-	github.com/docker/docker v28.0.2+incompatible
+	github.com/docker/cli v28.0.4+incompatible
+	github.com/docker/docker v28.0.4+incompatible
 	github.com/docker/go-connections v0.5.0
 	github.com/docker/go-units v0.5.0
 	github.com/dustin/go-humanize v1.0.1
-	github.com/expr-lang/expr v1.17.1
+	github.com/expr-lang/expr v1.17.2
 	github.com/florianl/go-tc v0.4.5
 	github.com/fsnotify/fsnotify v1.8.0
 	github.com/giantswarm/crd-docs-generator v0.11.3
@@ -29,7 +29,7 @@ require (
 	github.com/google/uuid v1.6.0
 	github.com/gopacket/gopacket v1.3.1
 	github.com/kr/pretty v0.3.1
-	github.com/moby/moby v28.0.2+incompatible
+	github.com/moby/moby v28.0.4+incompatible
 	github.com/onsi/ginkgo v1.16.5
 	github.com/onsi/gomega v1.36.2
 	github.com/opencontainers/image-spec v1.1.1
@@ -76,7 +76,7 @@ require (
 	k8s.io/cri-api v0.32.3
 	k8s.io/kubelet v0.32.3
 	oras.land/oras-go/v2 v2.5.0
-	sigs.k8s.io/controller-runtime v0.20.3
+	sigs.k8s.io/controller-runtime v0.20.4
 	sigs.k8s.io/security-profiles-operator v0.9.0
 	sigs.k8s.io/yaml v1.4.0
 )
