@@ -65,6 +65,7 @@ import (
 	_ "github.com/inspektor-gadget/inspektor-gadget/pkg/operators/limiter"
 	_ "github.com/inspektor-gadget/inspektor-gadget/pkg/operators/otel-logs"
 	_ "github.com/inspektor-gadget/inspektor-gadget/pkg/operators/otel-metrics"
+	_ "github.com/inspektor-gadget/inspektor-gadget/pkg/operators/process"
 	_ "github.com/inspektor-gadget/inspektor-gadget/pkg/operators/socketenricher"
 	_ "github.com/inspektor-gadget/inspektor-gadget/pkg/operators/sort"
 	_ "github.com/inspektor-gadget/inspektor-gadget/pkg/operators/uidgidresolver"
@@ -287,6 +288,7 @@ func main() {
 
 	if serve {
 		log.Infof("Inspektor Gadget version: %s", version.Version().String())
+		log.Infof("Inspektor Gadget User Agent: %s", version.UserAgent())
 
 		if experimental.Enabled() {
 			log.Info("Experimental features enabled")
@@ -394,7 +396,12 @@ func main() {
 			log.Fatalf("initializing manager: %v", err)
 		}
 
-		store, err := k8sconfigmapstore.New(mgr)
+		gadgetNs := config.Config.GetString(gadgettracermanagerconfig.GadgetNamespace)
+		if gadgetNs == "" {
+			log.Fatalf("gadget namespace must not be empty")
+		}
+
+		store, err := k8sconfigmapstore.New(mgr, gadgetNs)
 		if err != nil {
 			log.Fatalf("initializing store: %v", err)
 		}

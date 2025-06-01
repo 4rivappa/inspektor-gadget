@@ -15,11 +15,13 @@ COSIGN ?= cosign
 CRANE ?= crane
 VIMTO ?= vimto
 VIMTO_VM_MEMORY ?= 4096M
+DOCKER ?= docker
 
 UNIT_TEST_DIR = test/unit
 INTEGRATION_TEST_DIR = test/integration
 
 GADGETS = \
+	advise_networkpolicy \
 	advise_seccomp \
 	audit_seccomp \
 	bpfstats \
@@ -27,6 +29,7 @@ GADGETS = \
 	fdpass \
 	fsnotify \
 	profile_blockio \
+	profile_cpu \
 	profile_qdisc_latency \
 	profile_tcprtt \
 	trace_bind \
@@ -48,6 +51,7 @@ GADGETS = \
 	trace_tcpretrans \
 	top_blockio \
 	top_file \
+	top_process \
 	top_tcp \
 	snapshot_process \
 	snapshot_socket \
@@ -64,18 +68,26 @@ GADGETS_README_DEV = $(filter-out ci/%, $(addsuffix /dev.md, $(GADGETS)))
 .PHONY: all
 all: build
 
+.PHONY: build
 build: $(GADGETS)
+
+# Pull the gadget builder in an independent step to avoid doing the same for
+# each gadget, which introduces some overhead and increases the build time.
+.PHONY: pull-builder-image
+pull-builder-image:
+	$(DOCKER) pull $(BUILDER_IMAGE)
 
 # GADGET_BUILD_PARAMS can be used to pass additional parameters e.g
 # GADGET_BUILD_PARAMS="--update-metadata" make build
 .PHONY: $(GADGETS)
-$(GADGETS):
+$(GADGETS): pull-builder-image
 	@echo "Building $@"
 	@sudo -E \
 		IG_SOURCE_PATH=$(realpath $(ROOT_DIR)/..) \
 		$(IG) image build \
 		--builder-image $(BUILDER_IMAGE) \
 		-t $(GADGET_REPOSITORY)/$@:$(GADGET_TAG) \
+		--builder-image-pull=never \
 		$$GADGET_BUILD_PARAMS \
 		$@
 

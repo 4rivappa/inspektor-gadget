@@ -24,14 +24,19 @@ import (
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/client-go/util/homedir"
+
+	"github.com/inspektor-gadget/inspektor-gadget/internal/version"
 )
 
-func NewKubeConfig(kubeconfigPath string) (*rest.Config, error) {
+func NewKubeConfig(kubeconfigPath, userAgentComment string) (*rest.Config, error) {
 	var config *rest.Config
 	var err error
 	if kubeconfigPath != "" {
 		// kubeconfig is set explicitly (-kubeconfig flag or $KUBECONFIG variable)
 		config, err = clientcmd.BuildConfigFromFlags("", kubeconfigPath)
+		if err != nil {
+			return nil, err
+		}
 	} else {
 		// kubeconfig from a pod Service Account token
 		config, err = rest.InClusterConfig()
@@ -39,14 +44,22 @@ func NewKubeConfig(kubeconfigPath string) (*rest.Config, error) {
 			// kubeconfig from $HOME/.kube/config
 			if home := homedir.HomeDir(); home != "" {
 				config, err = clientcmd.BuildConfigFromFlags("", filepath.Join(home, ".kube", "config"))
+				if err != nil {
+					return nil, err
+				}
 			}
 		}
 	}
+	config.UserAgent = version.UserAgent()
+	if userAgentComment != "" {
+		config.UserAgent += " (" + userAgentComment + ")"
+	}
+
 	return config, err
 }
 
-func NewClientset(kubeconfigPath string) (*kubernetes.Clientset, error) {
-	config, err := NewKubeConfig(kubeconfigPath)
+func NewClientset(kubeconfigPath, userAgentComment string) (*kubernetes.Clientset, error) {
+	config, err := NewKubeConfig(kubeconfigPath, userAgentComment)
 	if err != nil {
 		return nil, err
 	}
@@ -61,8 +74,8 @@ func NewClientset(kubeconfigPath string) (*kubernetes.Clientset, error) {
 
 // NewClientsetWithProtobuf creates a client to talk to the Kubernetes API
 // server using protobuf encoding.
-func NewClientsetWithProtobuf(kubeconfigPath string) (*kubernetes.Clientset, error) {
-	config, err := NewKubeConfig(kubeconfigPath)
+func NewClientsetWithProtobuf(kubeconfigPath, userAgentComment string) (*kubernetes.Clientset, error) {
+	config, err := NewKubeConfig(kubeconfigPath, userAgentComment)
 	if err != nil {
 		return nil, err
 	}

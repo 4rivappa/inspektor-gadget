@@ -20,13 +20,12 @@ import (
 	"time"
 
 	"github.com/moby/moby/pkg/stringid"
-	ocispec "github.com/opencontainers/runtime-spec/specs-go"
 	"golang.org/x/sys/unix"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/dynamic"
-	"k8s.io/client-go/rest"
 
 	"github.com/inspektor-gadget/inspektor-gadget/pkg/columns"
+	"github.com/inspektor-gadget/inspektor-gadget/pkg/k8sutil"
 	"github.com/inspektor-gadget/inspektor-gadget/pkg/types"
 )
 
@@ -40,7 +39,7 @@ type Container struct {
 
 	// Container's configuration is the config.json from the OCI runtime
 	// spec
-	OciConfig *ocispec.Spec `json:"ociConfig,omitempty"`
+	OciConfig string `json:"ociConfig,omitempty"`
 
 	// Bundle is the directory containing the config.json from the OCI
 	// runtime spec
@@ -120,16 +119,15 @@ type ContainerSelector struct {
 // to help users to identify the workflow of the profile. We "lazily
 // enrich" this information because this operation is expensive and this
 // information is only needed in some cases.
-func (c *Container) GetOwnerReference() (*metav1.OwnerReference, error) {
+func (c *Container) GetOwnerReference(kubeconfigPath string) (*metav1.OwnerReference, error) {
 	if c.K8s.ownerReference != nil {
 		return c.K8s.ownerReference, nil
 	}
 
-	kubeconfig, err := rest.InClusterConfig()
+	kubeconfig, err := k8sutil.NewKubeConfig(kubeconfigPath, "container-collection/GetOwnerReference")
 	if err != nil {
 		return nil, fmt.Errorf("getting Kubernetes config: %w", err)
 	}
-
 	dynamicClient, err := dynamic.NewForConfig(kubeconfig)
 	if err != nil {
 		return nil, fmt.Errorf("getting get dynamic Kubernetes client: %w", err)

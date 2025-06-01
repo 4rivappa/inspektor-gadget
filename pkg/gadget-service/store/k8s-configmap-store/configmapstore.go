@@ -16,6 +16,7 @@ package k8sconfigmapstore
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"os"
 	"slices"
@@ -30,18 +31,16 @@ import (
 	"k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/client-go/util/workqueue"
 
 	"github.com/inspektor-gadget/inspektor-gadget/pkg/gadget-service/api"
 	instancemanager "github.com/inspektor-gadget/inspektor-gadget/pkg/gadget-service/instance-manager"
+	"github.com/inspektor-gadget/inspektor-gadget/pkg/k8sutil"
 )
 
 const (
 	GadgetInstance = "gadget-instance"
-
-	gadgetNamespace = "gadget"
 
 	gadgetImage    = "gadgetImage"
 	gadgetLogLevel = "gadgetLogLevel"
@@ -52,18 +51,24 @@ const (
 
 type Store struct {
 	api.UnimplementedGadgetInstanceManagerServer
-	nodeName    string
-	store       cache.Store
-	queue       workqueue.TypedRateLimitingInterface[string]
-	informer    cache.Controller
-	clientset   *kubernetes.Clientset
-	instanceMgr *instancemanager.Manager
+	nodeName        string
+	store           cache.Store
+	queue           workqueue.TypedRateLimitingInterface[string]
+	informer        cache.Controller
+	clientset       *kubernetes.Clientset
+	instanceMgr     *instancemanager.Manager
+	gadgetNamespace string
 }
 
-func New(mgr *instancemanager.Manager) (*Store, error) {
+func New(mgr *instancemanager.Manager, namespace string) (*Store, error) {
+	nodeName := os.Getenv("NODE_NAME")
+	if nodeName == "" {
+		return nil, errors.New("NODE_NAME environment variable is not set, cannot use config map store")
+	}
 	s := &Store{
-		instanceMgr: mgr,
-		nodeName:    os.Getenv("NODE_NAME"),
+		instanceMgr:     mgr,
+		nodeName:        nodeName,
+		gadgetNamespace: namespace,
 	}
 	err := s.init()
 	if err != nil {
@@ -74,11 +79,7 @@ func New(mgr *instancemanager.Manager) (*Store, error) {
 
 func (s *Store) init() error {
 	log.Infof("initializing ConfigMap store for node %q", s.nodeName)
-	config, err := rest.InClusterConfig()
-	if err != nil {
-		return err
-	}
-	clientset, err := kubernetes.NewForConfig(config)
+	clientset, err := k8sutil.NewClientset("", "k8s-configmap-store/init")
 	if err != nil {
 		return err
 	}
@@ -87,7 +88,7 @@ func (s *Store) init() error {
 
 	selector := labels.SelectorFromSet(map[string]string{"type": GadgetInstance}).String()
 
-	configMapListWatcher := cache.NewFilteredListWatchFromClient(clientset.CoreV1().RESTClient(), "configmaps", gadgetNamespace, func(options *v1.ListOptions) {
+	configMapListWatcher := cache.NewFilteredListWatchFromClient(clientset.CoreV1().RESTClient(), "configmaps", s.gadgetNamespace, func(options *v1.ListOptions) {
 		options.LabelSelector = selector
 	})
 
@@ -253,7 +254,7 @@ func (s *Store) CreateGadgetInstance(ctx context.Context, req *api.CreateGadgetI
 		},
 		ObjectMeta: v1.ObjectMeta{
 			Name:      req.GadgetInstance.Id,
-			Namespace: gadgetNamespace,
+			Namespace: s.gadgetNamespace,
 			Labels: map[string]string{
 				"type": GadgetInstance,
 				"name": req.GadgetInstance.Name,
@@ -271,7 +272,7 @@ func (s *Store) CreateGadgetInstance(ctx context.Context, req *api.CreateGadgetI
 		BinaryData: nil,
 	}
 
-	_, err = s.clientset.CoreV1().ConfigMaps(gadgetNamespace).Create(ctx, cmap, v1.CreateOptions{})
+	_, err = s.clientset.CoreV1().ConfigMaps(s.gadgetNamespace).Create(ctx, cmap, v1.CreateOptions{})
 	if err != nil {
 		return nil, err
 	}
@@ -298,7 +299,7 @@ func (s *Store) ListGadgetInstances(ctx context.Context, request *api.ListGadget
 
 // RemoveGadgetInstance removes the corresponding config map of the given gadget instance from the cluster
 func (s *Store) RemoveGadgetInstance(ctx context.Context, id *api.GadgetInstanceId) (*api.StatusResponse, error) {
-	err := s.clientset.CoreV1().ConfigMaps(gadgetNamespace).Delete(ctx, id.Id, v1.DeleteOptions{})
+	err := s.clientset.CoreV1().ConfigMaps(s.gadgetNamespace).Delete(ctx, id.Id, v1.DeleteOptions{})
 	if err != nil {
 		return &api.StatusResponse{
 			Result:  1,
@@ -313,7 +314,7 @@ func (s *Store) RemoveGadgetInstance(ctx context.Context, id *api.GadgetInstance
 
 // GetGadgetInstance returns the configuration of the given gadget instance
 func (s *Store) GetGadgetInstance(ctx context.Context, req *api.GadgetInstanceId) (*api.GadgetInstance, error) {
-	configMap, ok, err := s.store.GetByKey(gadgetNamespace + "/" + req.Id)
+	configMap, ok, err := s.store.GetByKey(s.gadgetNamespace + "/" + req.Id)
 	if err != nil {
 		return nil, err
 	}

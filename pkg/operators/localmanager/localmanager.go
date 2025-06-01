@@ -1,4 +1,4 @@
-// Copyright 2022-2024 The Inspektor Gadget authors
+// Copyright 2022-2025 The Inspektor Gadget authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -39,6 +39,7 @@ import (
 	apihelpers "github.com/inspektor-gadget/inspektor-gadget/pkg/gadget-service/api-helpers"
 	"github.com/inspektor-gadget/inspektor-gadget/pkg/gadgets"
 	igmanager "github.com/inspektor-gadget/inspektor-gadget/pkg/ig-manager"
+	"github.com/inspektor-gadget/inspektor-gadget/pkg/logger"
 	"github.com/inspektor-gadget/inspektor-gadget/pkg/operators"
 	"github.com/inspektor-gadget/inspektor-gadget/pkg/operators/common"
 	"github.com/inspektor-gadget/inspektor-gadget/pkg/params"
@@ -58,6 +59,7 @@ const (
 	ContainerdNamespace    = "containerd-namespace"
 	RuntimeProtocol        = "runtime-protocol"
 	EnrichWithK8sApiserver = "enrich-with-k8s-apiserver"
+	KubeconfigPath         = "kubeconfig"
 )
 
 type MountNsMapSetter interface {
@@ -132,6 +134,11 @@ func (l *localManager) GlobalParamDescs() params.ParamDescs {
 			DefaultValue: "false",
 			Description:  "Connect to the K8s API server to get further K8s enrichment",
 			TypeHint:     params.TypeBool,
+		},
+		{
+			Key:          KubeconfigPath,
+			DefaultValue: "", // Try in-cluster config by default
+			Description:  "Path to kubeconfig file. If not set, in-cluster config will be used.",
 		},
 	}
 }
@@ -266,8 +273,17 @@ func (l *localManager) Init(operatorParams *params.Params) error {
 	}
 
 	additionalOpts := []containercollection.ContainerCollectionOption{}
+	if kubeconfig := operatorParams.Get(KubeconfigPath).AsString(); kubeconfig != "" {
+		additionalOpts = append(additionalOpts, containercollection.WithKubeconfigPath(kubeconfig))
+	}
+
 	if operatorParams.Get(EnrichWithK8sApiserver).AsBool() {
-		additionalOpts = append(additionalOpts, containercollection.WithKubernetesEnrichment("", nil))
+		nodeName := os.Getenv("NODE_NAME")
+		if nodeName == "" {
+			return errors.New("NODE_NAME environment variable is not set, cannot enrich with K8s API server")
+		}
+		additionalOpts = append(additionalOpts, containercollection.WithNodeName(nodeName))
+		additionalOpts = append(additionalOpts, containercollection.WithKubernetesEnrichment(nodeName))
 	}
 
 	igManager, err := igmanager.NewManager(l.rc, additionalOpts)
@@ -331,6 +347,18 @@ func (l *localManagerTrace) Name() string {
 
 func (l *localManagerTrace) PreGadgetRun() error {
 	log := l.gadgetCtx.Logger()
+
+	if l.gadgetInstance != nil {
+		err := l.handleGadgetInstance(log)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (l *localManagerTrace) handleGadgetInstance(log logger.Logger) error {
 	id := uuid.New()
 	host := l.params.Get(Host).AsBool()
 
@@ -436,7 +464,6 @@ func (l *localManagerTrace) PreGadgetRun() error {
 			attachContainerFunc(container)
 		}
 	}
-
 	return nil
 }
 
@@ -597,12 +624,7 @@ func (l *localManager) Priority() int {
 }
 
 func (l *localManagerTraceWrapper) PreStart(gadgetCtx operators.GadgetContext) error {
-	// hack - this makes it possible to use the Attacher interface
-	var ok bool
-	l.gadgetInstance, ok = gadgetCtx.GetVar("ebpfInstance")
-	if !ok {
-		return fmt.Errorf("getting ebpfInstance")
-	}
+	l.gadgetInstance, _ = gadgetCtx.GetVar("ebpfInstance")
 
 	if l.manager.igManager != nil {
 		compat.Subscribe(

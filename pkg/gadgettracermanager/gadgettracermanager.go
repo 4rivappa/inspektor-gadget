@@ -26,8 +26,6 @@ import (
 	"github.com/cilium/ebpf/rlimit"
 	log "github.com/sirupsen/logrus"
 
-	ocispec "github.com/opencontainers/runtime-spec/specs-go"
-
 	containercollection "github.com/inspektor-gadget/inspektor-gadget/pkg/container-collection"
 	containerhook "github.com/inspektor-gadget/inspektor-gadget/pkg/container-hook"
 	"github.com/inspektor-gadget/inspektor-gadget/pkg/gadgets"
@@ -175,20 +173,13 @@ func (g *GadgetTracerManager) AddContainer(_ context.Context, containerDefinitio
 				ContainerName: containerDefinition.Name,
 			},
 		},
+		OciConfig: containerDefinition.OciConfig,
 	}
 	if containerDefinition.LabelsSet {
 		container.K8s.PodLabels = make(map[string]string)
 		for _, l := range containerDefinition.Labels {
 			container.K8s.PodLabels[l.Key] = l.Value
 		}
-	}
-	if containerDefinition.OciConfig != "" {
-		containerConfig := &ocispec.Spec{}
-		err := json.Unmarshal([]byte(containerDefinition.OciConfig), containerConfig)
-		if err != nil {
-			return nil, fmt.Errorf("unmarshaling container config: %w", err)
-		}
-		container.OciConfig = containerConfig
 	}
 
 	g.ContainerCollection.AddContainer(&container)
@@ -267,7 +258,7 @@ func NewServer(conf *Conf) (*GadgetTracerManager, error) {
 		opts = append(opts, containercollection.WithOCIConfigEnrichment())
 		opts = append(opts, containercollection.WithCgroupEnrichment())
 		opts = append(opts, containercollection.WithLinuxNamespaceEnrichment())
-		opts = append(opts, containercollection.WithKubernetesEnrichment(g.nodeName, nil))
+		opts = append(opts, containercollection.WithKubernetesEnrichment(g.nodeName))
 		opts = append(opts, containercollection.WithTracerCollection(g.tracerCollection))
 		opts = append(opts, containercollection.WithProcEnrichment())
 	}
@@ -280,12 +271,14 @@ func NewServer(conf *Conf) (*GadgetTracerManager, error) {
 		log.Infof("GadgetTracerManager: hook mode: none")
 		if !conf.TestOnly {
 			opts = append(opts, containercollection.WithInitialKubernetesContainers(g.nodeName))
+			opts = append(opts, containercollection.WithOCIConfigForInitialContainer())
 		}
 	case "auto":
 		if containerhook.Supported() {
 			log.Infof("GadgetTracerManager: hook mode: fanotify+ebpf (auto)")
 			opts = append(opts, containercollection.WithContainerFanotifyEbpf())
 			opts = append(opts, containercollection.WithInitialKubernetesContainers(g.nodeName))
+			opts = append(opts, containercollection.WithOCIConfigForInitialContainer())
 		} else {
 			log.Infof("GadgetTracerManager: hook mode: podinformer (auto)")
 			opts = append(opts, containercollection.WithPodInformer(g.nodeName))
@@ -299,6 +292,7 @@ func NewServer(conf *Conf) (*GadgetTracerManager, error) {
 		log.Infof("GadgetTracerManager: hook mode: fanotify+ebpf")
 		opts = append(opts, containercollection.WithContainerFanotifyEbpf())
 		opts = append(opts, containercollection.WithInitialKubernetesContainers(g.nodeName))
+		opts = append(opts, containercollection.WithOCIConfigForInitialContainer())
 	default:
 		return nil, fmt.Errorf("invalid hook mode: %s", conf.HookMode)
 	}
