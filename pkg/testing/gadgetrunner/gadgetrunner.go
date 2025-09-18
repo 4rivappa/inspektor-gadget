@@ -35,6 +35,7 @@ import (
 	apihelpers "github.com/inspektor-gadget/inspektor-gadget/pkg/gadget-service/api-helpers"
 	"github.com/inspektor-gadget/inspektor-gadget/pkg/gadgets"
 	"github.com/inspektor-gadget/inspektor-gadget/pkg/logger"
+	"github.com/inspektor-gadget/inspektor-gadget/pkg/oci"
 	"github.com/inspektor-gadget/inspektor-gadget/pkg/operators"
 	ocihandler "github.com/inspektor-gadget/inspektor-gadget/pkg/operators/oci-handler"
 	"github.com/inspektor-gadget/inspektor-gadget/pkg/operators/simple"
@@ -172,7 +173,7 @@ func (g *GadgetRunner[T]) RunGadget() {
 		gadgetOperatorOpts = append(gadgetOperatorOpts, simple.OnStart(g.onGadgetRun))
 	}
 
-	g.DataOperator = append(g.DataOperator, ocihandler.OciHandler)
+	g.DataOperator = append(g.DataOperator, ocihandler.New())
 	for _, dataOperator := range operators.GetDataOperators() {
 		g.DataOperator = append(g.DataOperator, dataOperator)
 	}
@@ -216,6 +217,12 @@ func (g *GadgetRunner[T]) RunGadget() {
 }
 
 func GetGadgetImageName(gadget string) string {
+	// if the image already specifies a domain, don't append GADGET_REPOSITORY
+	domain, _ := oci.SplitIGDomain(gadget)
+	if domain != oci.DefaultDomain {
+		return gadget
+	}
+
 	repository := os.Getenv("GADGET_REPOSITORY")
 	tag := os.Getenv("GADGET_TAG")
 	if repository != "" {

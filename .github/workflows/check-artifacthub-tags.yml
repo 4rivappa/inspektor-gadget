@@ -16,11 +16,12 @@ env:
 
 jobs:
   check-gadgets:
+    if: github.repository == 'inspektor-gadget/inspektor-gadget'
     runs-on: ubuntu-latest
 
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
 
     - name: Gather valid gadgets
       id: filter-gadgets

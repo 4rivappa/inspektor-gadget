@@ -19,6 +19,7 @@ package ig
 
 import (
 	"fmt"
+	"io"
 	"os"
 	"os/exec"
 	"strings"
@@ -26,6 +27,7 @@ import (
 
 	igtesting "github.com/inspektor-gadget/inspektor-gadget/pkg/testing"
 	"github.com/inspektor-gadget/inspektor-gadget/pkg/testing/command"
+	"github.com/inspektor-gadget/inspektor-gadget/pkg/testing/gadgetrunner"
 )
 
 // runner is responsible for storing configuration of ig executable and provide methods to interact with.
@@ -76,6 +78,20 @@ func WithValidateOutput(validateOutput func(t *testing.T, output string)) Option
 	}
 }
 
+// WithValidateStderrOutput used to compare the actual output with expected output.
+func WithValidateStderrOutput(validateOutput func(t *testing.T, output string)) Option {
+	return func(ig *runner) {
+		ig.ValidateStdErrOutput = validateOutput
+	}
+}
+
+// WithStdOutWriter sets a writes that receives the standard output of the command.
+func WithStdOutWriter(writer io.Writer) Option {
+	return func(ig *runner) {
+		ig.StdOutWriter = writer
+	}
+}
+
 // WithOutputMode sets the output mode
 func WithOutputMode(outputMode string) Option {
 	return func(ig *runner) {
@@ -86,14 +102,7 @@ func WithOutputMode(outputMode string) Option {
 // New creates a new IG configured with the Options passed as parameters.
 func New(image string, opts ...Option) igtesting.TestStep {
 	commandName := fmt.Sprintf("Run_%s", image)
-	repository := os.Getenv("GADGET_REPOSITORY")
-	tag := os.Getenv("GADGET_TAG")
-	if repository != "" {
-		image = fmt.Sprintf("%s/%s", repository, image)
-	}
-	if tag != "" {
-		image = fmt.Sprintf("%s:%s", image, tag)
-	}
+	image = gadgetrunner.GetGadgetImageName(image)
 
 	factoryRunner := &runner{
 		path:       "ig",
@@ -108,15 +117,15 @@ func New(image string, opts ...Option) igtesting.TestStep {
 		factoryRunner.path = path
 	}
 
-	for _, opt := range opts {
-		opt(factoryRunner)
-	}
-
 	// append IG_FLAGS flags separately to ensure
 	// one from the option aren't overwritten
 	if flags, ok := os.LookupEnv("IG_FLAGS"); ok {
 		split := strings.Split(flags, " ")
 		factoryRunner.flags = append(factoryRunner.flags, split...)
+	}
+
+	for _, opt := range opts {
+		opt(factoryRunner)
 	}
 
 	factoryRunner.createCmd()

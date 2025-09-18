@@ -50,7 +50,7 @@ $ kubectl gadget version
 ### Compilation from source
 
 To build Inspektor Gadget from source, you'll need to have a Golang version
-1.24.4 or higher installed.
+1.24.6 or higher installed.
 
 ```bash
 $ git clone https://github.com/inspektor-gadget/inspektor-gadget.git
@@ -76,8 +76,6 @@ $ kubectl gadget deploy
 ```
 
 This will deploy the gadget DaemonSet along with its RBAC rules.
-
-![Screencast of the deploy command](../install.gif)
 
 #### Customizing the deployment
 

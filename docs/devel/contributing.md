@@ -162,25 +162,40 @@ $ make -C integration/ig/non-k8s test-docker
 
 ### Benchmarks
 
-You can run the different benchmark tests with:
+#### Running the benchmarks
+
+1. Make sure you have the `integration/benchmarks/benchmarks.yaml` file
+   configured correctly.
+2. Run the benchmarks using the following command:
 
 ```bash
-$ make gadgets-benchmarks
+$ make benchmarks-test
 ```
 
-Or you can run an individual test with:
+It'll generate a `test_results_<date>.csv` file with the results of the
+benchmarks.
+
+#### Analyzing the results
+
+You can analyze the results using the Jupyter notebook
+`integration/benchmarks/benchmarks_analysis.ipynb`. You can run it in different
+applications supporting Jupyter notebooks, such as VS Code with the Jupyter
+extension, JupyterLab, or Jupyter Notebook. Or you can generate an HTML report
+from the notebook using the following command:
 
 ```bash
-$ go test -exec sudo \
-    -bench='BenchmarkAllGadgetsWithContainers/container10$/trace-tcpconnect' \
-    -run=Benchmark \
-    ./internal/benchmarks/...
+# Create a virtual environment
+$ python3 -m venv .venv
+$ source .venv/bin/activate
+
+# Install the requirements
+$ pip install -r requirements.txt
+
+# Generate the HTML report
+$ INTPUT_FILE=path_to_csv_file make make gen-html
 ```
 
-Records of previous benchmarks are available [here](https://inspektor-gadget.github.io/ig-benchmarks/dev/bench/index.html).
-See details in the [CI documentation (benchmarks)](ci.md#benchmarks).
-
-#### Explaining performance improvements in a PR
+### Explaining performance improvements in a PR
 
 If you want to contribute a performance improvement, it is useful to use benchmarks to explain the impact on
 performances. I will use the example of an improvement on the networking gadgets from
@@ -367,6 +382,14 @@ to the commit message.
 ```
 Signed-off-by: Joe Smith <joe.smith@email.com>
 ```
+
+### Breaking Changes
+
+If a PR introduces a breaking change, please label it with the `breaking-change`
+label and provide the following information in the PR description:
+- What is the breaking change
+- Which users are impacted
+- How users should adapt to the breaking change
 
 ### Commit History Guidelines
 

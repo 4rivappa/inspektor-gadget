@@ -124,11 +124,18 @@ func NewRunCommand(rootCmd *cobra.Command, runtime runtime.Runtime, hiddenColumn
 	initializedOperators := false
 
 	preRun := func(cmd *cobra.Command, args []string) error {
-		err := runtime.Init(runtimeGlobalParams)
-		if err != nil {
-			return fmt.Errorf("initializing runtime: %w", err)
+		// Skip runtime init if only -h/--help was specified.
+		// If an image name is given, we need to initialize the runtime
+		skipRuntimeInit := len(args) == 1 && (args[0] == "-h" || args[0] == "--help")
+
+		var err error
+		if !skipRuntimeInit {
+			err = runtime.Init(runtimeGlobalParams)
+			if err != nil {
+				return fmt.Errorf("initializing runtime: %w", err)
+			}
+			defer runtime.Close()
 		}
-		defer runtime.Close()
 
 		// set global operator flags from the config file
 		for o, p := range opGlobalParams {
@@ -215,6 +222,7 @@ func NewRunCommand(rootCmd *cobra.Command, runtime runtime.Runtime, hiddenColumn
 			imageName,
 			gadgetcontext.WithDataOperators(ops...),
 			gadgetcontext.WithUseInstance(commandMode == CommandModeAttach),
+			gadgetcontext.WithIsClient(runtime.IsClient()),
 		)
 
 		// GetOCIGadget needs at least the params from the oci handler, so let's prepare those in here
@@ -330,6 +338,7 @@ func NewRunCommand(rootCmd *cobra.Command, runtime runtime.Runtime, hiddenColumn
 
 			if isDetach {
 				return runInstanceSpecsDetached(ctx, runtime, specs, runtimeParams,
+					gadgetcontext.WithIsClient(runtime.IsClient()),
 					gadgetcontext.WithDataOperators(ops...),
 					gadgetcontext.WithTimeout(timeoutDuration),
 					gadgetcontext.WithUseInstance(false),
@@ -366,6 +375,7 @@ func NewRunCommand(rootCmd *cobra.Command, runtime runtime.Runtime, hiddenColumn
 			gadgetcontext.WithDataOperators(ops...),
 			gadgetcontext.WithTimeout(timeoutDuration),
 			gadgetcontext.WithUseInstance(commandMode == CommandModeAttach),
+			gadgetcontext.WithIsClient(runtime.IsClient()),
 		)
 
 		// Write back param values
@@ -483,6 +493,11 @@ nextParam:
 			desc += " [" + strings.Join(p.PossibleValues, ", ") + "]"
 		}
 
+		if p.AlternativeKey != "" {
+			cmd.PersistentFlags().Var(&Param{p}, p.AlternativeKey, desc)
+			cmd.PersistentFlags().MarkHidden(p.AlternativeKey)
+			desc += " (alias: " + p.AlternativeKey + ")"
+		}
 		flag := cmd.PersistentFlags().VarPF(&Param{p}, p.Key, p.Alias, desc)
 		if p.IsMandatory {
 			cmd.MarkPersistentFlagRequired(p.Key)

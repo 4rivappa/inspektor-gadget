@@ -61,6 +61,10 @@ func (c *K8sContainer) Start(t *testing.T) {
 		t.Fatalf("testutils/kubernetes: seccomp profiles are not supported yet")
 	}
 
+	if c.options.sysctls != nil {
+		t.Fatalf("testutils/kubernetes: sysctls are not supported yet")
+	}
+
 	if c.options.privileged {
 		t.Fatalf("testutils/kubernetes: privileged containers are not supported yet")
 	}
@@ -176,7 +180,7 @@ func deletePodCommand(t *testing.T, podname, namespace string) *command.Command 
 	return &command.Command{
 		Name:           fmt.Sprintf("Delete %s", podname),
 		Cmd:            exec.Command("/bin/sh", "-c", fmt.Sprintf("kubectl delete -n=%s pod %s", namespace, podname)),
-		ValidateOutput: match.EqualString(t, fmt.Sprintf("pod \"%s\" deleted\n", podname)),
+		ValidateOutput: match.MatchRegexp(t, fmt.Sprintf("pod \"%s\" deleted( from %s namespace)?\n", podname, namespace)),
 	}
 }
 

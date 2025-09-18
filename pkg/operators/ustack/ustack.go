@@ -19,6 +19,7 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+	"sync"
 
 	"github.com/cilium/ebpf"
 
@@ -67,34 +68,25 @@ func (o *Operator) InstantiateDataOperator(gadgetCtx operators.GadgetContext, in
 		subscriptions: make(map[datasource.DataSource][]func(ds datasource.DataSource, data datasource.Data) error),
 	}
 
-	opts := symbolizer.SymbolizerOptions{}
 	symbolizers := instanceParamValues[symbolizersParam]
 	switch symbolizers {
 	case "", "none":
-		opts.UseSymtab = false
+		// Nothing to do
 	case "auto":
-		opts.UseSymtab = true
+		instance.symbolizerOpts.UseSymtab = !gadgetCtx.IsClient()
 	default:
 		list := strings.Split(symbolizers, ",")
 		for _, s := range list {
 			switch s {
 			case "symtab":
-				opts.UseSymtab = true
+				instance.symbolizerOpts.UseSymtab = !gadgetCtx.IsClient()
 			default:
 				return nil, fmt.Errorf("invalid symbolizer: %s", s)
 			}
 		}
 	}
 
-	var err error
-	// When the Symbolizer implements more options, they can be added here
-	if opts.UseSymtab {
-		instance.symbolizer, err = symbolizer.NewSymbolizer(opts)
-		if err != nil {
-			return nil, err
-		}
-	}
-	err = instance.init(gadgetCtx)
+	err := instance.init(gadgetCtx)
 	if err != nil {
 		return nil, err
 	}
@@ -109,8 +101,9 @@ func (o *Operator) Priority() int {
 }
 
 type OperatorInstance struct {
-	userStackMap *ebpf.Map
-	symbolizer   *symbolizer.Symbolizer
+	userStackMap   func() *ebpf.Map
+	symbolizer     *symbolizer.Symbolizer
+	symbolizerOpts symbolizer.SymbolizerOptions
 
 	subscriptions map[datasource.DataSource][]func(ds datasource.DataSource, data datasource.Data) error
 }
@@ -229,23 +222,32 @@ func (o *OperatorInstance) init(gadgetCtx operators.GadgetContext) error {
 				mtimeSec, _ := mtimeSecField[0].Uint64(data)
 				mtimeNsec, _ := mtimeNsecField[0].Uint32(data)
 
-				stack := [ebpftypes.UserPerfMaxStackDepth]uint64{}
-				err := o.userStackMap.Lookup(stackId, &stack)
-				if err != nil {
-					logger.Warnf("stack with ID %d is lost: %s", stackId, err.Error())
-					return nil
-				}
+				var stackQueries []symbolizer.StackItemQuery
 
-				var addressesBuilder strings.Builder
-				addrs := make([]uint64, 0, len(stack))
-				for i, addr := range stack {
-					if addr == 0 {
-						break
+				// The ustack operator can run both on the client and on the server side.
+				// The BPF map is not available client-side (e.g. kubectl-gadget)
+				if !gadgetCtx.IsClient() {
+					if o.userStackMap == nil {
+						logger.Warn("user stack map is not initialized")
+						return nil
 					}
-					addrs = append(addrs, addr)
-					fmt.Fprintf(&addressesBuilder, "[%d]0x%016x; ", i, addr)
+					userStackMap := o.userStackMap()
+					if userStackMap == nil {
+						logger.Warn("user stack map is missing")
+						return nil
+					}
+
+					var addressesStr string
+					var err error
+					addressesStr, stackQueries, err = readUserStackMap(gadgetCtx, userStackMap, stackId)
+					if err != nil {
+						logger.Warn(err)
+						return nil
+					}
+					if addressesStr != "" {
+						addressesField.PutString(data, addressesStr)
+					}
 				}
-				addressesField.PutString(data, addressesBuilder.String())
 
 				if o.symbolizer != nil {
 					task := symbolizer.Task{
@@ -256,15 +258,16 @@ func (o *OperatorInstance) init(gadgetCtx operators.GadgetContext) error {
 						MtimeSec:     int64(mtimeSec),
 						MtimeNsec:    mtimeNsec,
 					}
-					symbols, err := o.symbolizer.Resolve(task, addrs)
+					stackQueriesResponse, err := o.symbolizer.Resolve(task, stackQueries)
 					if err != nil {
 						logger.Warnf("symbolizer: %s", err)
 						return nil
 					}
 
 					var symbolsBuilder strings.Builder
-					for i, symbol := range symbols {
-						fmt.Fprintf(&symbolsBuilder, "[%d]%s; ", i, symbol)
+					for i, res := range stackQueriesResponse {
+						s := res.Symbol
+						fmt.Fprintf(&symbolsBuilder, "[%d]%s; ", i, s)
 					}
 					symbolsField.PutString(data, symbolsBuilder.String())
 				}
@@ -273,6 +276,45 @@ func (o *OperatorInstance) init(gadgetCtx operators.GadgetContext) error {
 			o.subscriptions[ds] = append(o.subscriptions[ds], converter)
 		}
 	}
+
+	if len(o.subscriptions) > 0 && !gadgetCtx.IsClient() {
+		var err error
+		// When the Symbolizer implements more options, they can be added here
+		if o.symbolizerOpts.UseSymtab {
+			o.symbolizer, err = symbolizer.NewSymbolizer(o.symbolizerOpts)
+			if err != nil {
+				return err
+			}
+		}
+
+		// At Instantiate-time, the ebpf operator has set the MapSpec
+		// variables but not yet the Map variables. We use the MapSpec to check
+		// if the gadget has a user stack map. But we will only access the Map
+		// at Start(), when the ebpf operator has set them.
+
+		userStackMapAny, ok := gadgetCtx.GetVar(operators.MapSpecPrefix + ebpftypes.UserStackMapName)
+		if !ok || userStackMapAny == nil {
+			return errors.New("user stack map is not initialized but used. " +
+				"if you are using `gadget_user_stack` as event field, " +
+				"try to include <gadget/user_stack_map.h>")
+		}
+		_, ok = userStackMapAny.(*ebpf.MapSpec)
+		if !ok {
+			return errors.New("user stack map is not of expected type")
+		}
+		o.userStackMap = sync.OnceValue(func() *ebpf.Map {
+			userStackMapAny, ok := gadgetCtx.GetVar(operators.MapPrefix + ebpftypes.UserStackMapName)
+			if !ok || userStackMapAny == nil {
+				return nil
+			}
+			userStackMap, ok := userStackMapAny.(*ebpf.Map)
+			if !ok {
+				return nil
+			}
+			return userStackMap
+		})
+	}
+
 	return nil
 }
 
@@ -280,21 +322,8 @@ func (o *OperatorInstance) Name() string {
 	return Name
 }
 
-func (o *OperatorInstance) Start(gadgetCtx operators.GadgetContext) error {
-	userStackMapAny, ok := gadgetCtx.GetVar(operators.MapPrefix + ebpftypes.UserStackMapName)
-	if !ok || userStackMapAny == nil {
-		return errors.New("user stack map is not initialized but used. " +
-			"if you are using `gadget_user_stack` as event field, " +
-			"try to include <gadget/user_stack_map.h>")
-	}
-	o.userStackMap, ok = userStackMapAny.(*ebpf.Map)
-	if !ok {
-		return errors.New("user stack map is not of expected type")
-	}
-	if o.userStackMap == nil {
-		return errors.New("user stack map is nil")
-	}
-
+// PreStart subscribes to the datasources.
+func (o *OperatorInstance) PreStart(gadgetCtx operators.GadgetContext) error {
 	for ds, funcs := range o.subscriptions {
 		for _, f := range funcs {
 			ds.Subscribe(f, Priority)
@@ -303,6 +332,12 @@ func (o *OperatorInstance) Start(gadgetCtx operators.GadgetContext) error {
 	return nil
 }
 
+// Start can emit data. Nothing to do here.
+func (o *OperatorInstance) Start(gadgetCtx operators.GadgetContext) error {
+	return nil
+}
+
+// Stop stops emitting data. Nothing to do here.
 func (o *OperatorInstance) Stop(gadgetCtx operators.GadgetContext) error {
 	return nil
 }

@@ -1,4 +1,4 @@
-// Copyright 2024 The Inspektor Gadget authors
+// Copyright 2024-2025 The Inspektor Gadget authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -39,6 +39,7 @@ import (
 	"github.com/inspektor-gadget/inspektor-gadget/pkg/operators"
 	"github.com/inspektor-gadget/inspektor-gadget/pkg/params"
 	"github.com/inspektor-gadget/inspektor-gadget/pkg/resources"
+	signatureverifier "github.com/inspektor-gadget/inspektor-gadget/pkg/signature-verifier"
 )
 
 const (
@@ -62,11 +63,18 @@ type ociHandler struct {
 	globalParams *params.Params
 }
 
+func New() *ociHandler {
+	return &ociHandler{}
+}
+
 func (o *ociHandler) Name() string {
 	return "oci"
 }
 
 func (o *ociHandler) Init(params *params.Params) error {
+	if o.globalParams != nil {
+		return fmt.Errorf("ociHandler already initialized")
+	}
 	o.globalParams = params
 	return nil
 }
@@ -279,7 +287,6 @@ func constructTempConfig(ann string) (map[string]any, int, error) {
 				},
 			},
 		}
-		viper.Set("a", "b")
 		return tmpConfig, 1, nil
 
 	case 2:
@@ -335,8 +342,12 @@ func (o *OciHandlerInstance) init(gadgetCtx operators.GadgetContext) error {
 			DisallowPulling:    o.globalParams.Get(disallowPulling).AsBool(),
 		},
 		VerifyOptions: oci.VerifyOptions{
-			VerifyPublicKey: o.globalParams.Get(verifyImage).AsBool(),
-			PublicKeys:      o.globalParams.Get(publicKeys).AsStringSlice(),
+			VerifyOptions: signatureverifier.VerifyOptions{
+				CosignVerifyOptions: signatureverifier.CosignVerifyOptions{
+					PublicKeys: o.globalParams.Get(publicKeys).AsStringSlice(),
+				},
+			},
+			VerifySignature: o.globalParams.Get(verifyImage).AsBool(),
 		},
 		AllowedGadgetsOptions: oci.AllowedGadgetsOptions{
 			AllowedGadgets: o.globalParams.Get(allowedGadgets).AsStringSlice(),
@@ -378,8 +389,11 @@ func (o *OciHandlerInstance) init(gadgetCtx operators.GadgetContext) error {
 	}
 	r.Close()
 
-	// Store metadata for serialization
-	gadgetCtx.SetMetadata(metadata)
+	// Store metadata
+	err = gadgetCtx.SetMetadata(metadata)
+	if err != nil {
+		return fmt.Errorf("setting metadata: %w", err)
+	}
 
 	cfg, ok := gadgetCtx.GetVar("config")
 	if !ok {
@@ -562,4 +576,4 @@ func (o *ociHandler) Priority() int {
 }
 
 // OciHandler is a singleton of ociHandler
-var OciHandler = &ociHandler{}
+var OciHandler = New()

@@ -1,4 +1,4 @@
-// Copyright 2022-2024 The Inspektor Gadget authors
+// Copyright 2022-2025 The Inspektor Gadget authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -56,7 +56,7 @@ type GadgetContext interface {
 	LoadGadgetInfo(info *api.GadgetInfo, paramValues api.ParamValues, run bool, extraInfo *api.ExtraInfo) error
 	StopLocalOperators()
 	Params() []*api.Param
-	SetMetadata([]byte)
+	SetMetadata([]byte) error
 	SetParams([]*api.Param)
 	DataOperators() []operators.DataOperator
 	OrasTarget() oras.ReadOnlyTarget
@@ -121,4 +121,6 @@ type Runtime interface {
 	RunGadget(gadgetCtx GadgetContext, runtimeParams *params.Params, paramValueMap api.ParamValues) error
 	SetDefaultValue(params.ValueHint, string)
 	GetDefaultValue(params.ValueHint) (string, bool)
+
+	IsClient() bool
 }

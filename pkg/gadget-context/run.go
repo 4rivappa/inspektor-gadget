@@ -58,6 +58,8 @@ func (c *GadgetContext) instantiateOperators(paramValues api.ParamValues) error 
 		instanceParams := op.InstanceParams().AddPrefix(opParamPrefix)
 		opParamValues := paramValues.ExtractPrefixedValues(opParamPrefix)
 
+		apihelpers.MergeWithAlternativeKeys(instanceParams, opParamValues)
+
 		// Ensure all params are present
 		err := apihelpers.NormalizeWithDefaults(instanceParams, opParamValues)
 		if err != nil {
@@ -225,6 +227,9 @@ func (c *GadgetContext) Run(paramValues api.ParamValues) error {
 			c.logger.Warn("error closing operators after run gadget:", err)
 		}
 	}()
+
+	// keep a copy - currently only used for custom params in SetMetadata()
+	c.paramValues = paramValues
 
 	metricAttribs := attribute.NewSet(
 		attribute.KeyValue{Key: "gadget_image", Value: attribute.StringValue(c.imageName)},

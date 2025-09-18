@@ -17,6 +17,7 @@ package testing
 import (
 	"os"
 	"os/exec"
+	"runtime"
 	"testing"
 	"time"
 
@@ -24,7 +25,6 @@ import (
 	"github.com/moby/moby/pkg/parsers/kernel"
 	"github.com/stretchr/testify/require"
 
-	utilstest "github.com/inspektor-gadget/inspektor-gadget/internal/test"
 	"github.com/inspektor-gadget/inspektor-gadget/pkg/testing/gadgetrunner"
 	"github.com/inspektor-gadget/inspektor-gadget/pkg/testing/utils"
 )
@@ -43,6 +43,7 @@ const (
 	NginxImage            = "ghcr.io/inspektor-gadget/ci/nginx:latest"
 	GccImage              = "ghcr.io/inspektor-gadget/ci/gcc:latest"
 	NetworkMultitoolImage = "ghcr.io/inspektor-gadget/ci/network-multitool:latest"
+	RegistryImage         = "ghcr.io/inspektor-gadget/ci/registry:2"
 )
 
 func SkipK8sDistros(t testing.TB, distros ...string) {
@@ -72,6 +73,25 @@ func RemoveMemlock(t testing.TB) {
 	// Some kernel versions need to have the memlock rlimit removed
 	err := rlimit.RemoveMemlock()
 	require.NoError(t, err, "Failed to remove memlock rlimit: %s", err)
+}
+
+// GetArch returns the architecture of the current node.
+// When used in Kubernetes, it gets the architecture from a random node in the cluster.
+func GetArch(t testing.TB) string {
+	t.Helper()
+
+	var currArch string
+
+	if utils.CurrentTestComponent == utils.KubectlGadgetTestComponent {
+		cmd := exec.Command("kubectl", "get", "nodes", "-o", "jsonpath={.items[0].status.nodeInfo.architecture}")
+		output, err := cmd.Output()
+		require.NoError(t, err, "Failed to get architecture: %s", err)
+		currArch = string(output)
+	} else {
+		currArch = runtime.GOARCH
+	}
+
+	return currArch
 }
 
 // GetKernelVersion returns the kernel version of the current node.
@@ -123,7 +143,7 @@ func MinimumKernelVersion(t testing.TB, minKernelVersion string) {
 }
 
 func InitUnitTest(t testing.TB) {
-	utilstest.RequireRoot(t)
+	utils.RequireRoot(t)
 	RemoveMemlock(t)
 }
 

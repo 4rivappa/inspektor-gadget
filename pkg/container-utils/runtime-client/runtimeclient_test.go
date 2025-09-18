@@ -22,11 +22,11 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/stretchr/testify/require"
 
-	utilstest "github.com/inspektor-gadget/inspektor-gadget/internal/test"
 	containerutils "github.com/inspektor-gadget/inspektor-gadget/pkg/container-utils"
 	runtimeclient "github.com/inspektor-gadget/inspektor-gadget/pkg/container-utils/runtime-client"
 	"github.com/inspektor-gadget/inspektor-gadget/pkg/container-utils/testutils"
 	containerutilsTypes "github.com/inspektor-gadget/inspektor-gadget/pkg/container-utils/types"
+	utilstest "github.com/inspektor-gadget/inspektor-gadget/pkg/testing/utils"
 )
 
 const (
@@ -49,11 +49,14 @@ func TestRuntimeClientInterface(t *testing.T) {
 			var expectedData []*runtimeclient.ContainerDetailsData
 			for i := 0; i < numContainers; i++ {
 				cn := fmt.Sprintf("%s-%s-%d", containerNamePrefix, runtime, i)
+				opts := []testutils.Option{
+					testutils.WithImage(containerImageName),
+				}
 				c, err := testutils.NewContainer(
 					runtime,
 					cn,
 					"sleep inf", // We simply want to keep the container running
-					testutils.WithImage(containerImageName),
+					opts...,
 				)
 				require.Nil(t, err)
 				require.NotNil(t, c)

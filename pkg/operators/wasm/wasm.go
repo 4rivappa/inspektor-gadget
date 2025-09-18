@@ -20,6 +20,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"os"
 	"sync"
 	"time"
 
@@ -63,7 +64,9 @@ type wasmOperator struct {
 func newWasmOperator() *wasmOperator {
 	cache, err := wazero.NewCompilationCacheWithDir(cacheDir)
 	if err != nil {
-		log.Warnf("failed to setup wasm compilation cache, skipping cache: %v", err)
+		if os.Geteuid() == 0 {
+			log.Warnf("failed to setup wasm compilation cache, skipping cache: %v", err)
+		}
 		return &wasmOperator{}
 	}
 	return &wasmOperator{
@@ -357,7 +360,7 @@ func (i *wasmOperatorInstance) Stop(gadgetCtx operators.GadgetContext) error {
 	}()
 
 	// We need a new context in here, as gadgetCtx has already been cancelled
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*42)
 	defer cancel()
 
 	return i.callGuestFunction(ctx, "gadgetStop")

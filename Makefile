@@ -272,12 +272,6 @@ test: generate-testdata
 	# skip gadgets tests
 	go test -exec sudo -v $$(go list ./... | grep -v 'github.com/inspektor-gadget/inspektor-gadget/gadgets')
 
-# Individual tests can be selected with a command such as:
-# go test -exec sudo -ldflags="-s=false" -bench='^BenchmarkAllGadgetsWithContainers$/^container100$/snapshot-socket' -run=Benchmark ./internal/benchmarks/... -count 10
-.PHONY: gadgets-benchmarks
-gadgets-benchmarks:
-	go test -exec sudo -ldflags="-s=false" -bench=. -run=Benchmark ./pkg/gadgets/... ./internal/benchmarks/...
-
 # INTEGRATION_TESTS_PARAMS can be used to pass additional parameters locally e.g
 # INTEGRATION_TESTS_PARAMS="-run TestTraceExec -no-deploy-spo" make integration-tests
 .PHONY: integration-tests
@@ -298,6 +292,12 @@ integration-tests: kubectl-gadget
 .PHONY: component-tests
 component-tests:
 	go test -exec sudo -v ./integration/components/... -integration -timeout 5m --builder-image $(GADGET_BUILDER)
+
+# BENCHMARKS_TESTS_PARAMS can be used to pass additional parameters locally e.g
+# BENCHMARKS_TESTS_PARAMS="-run TestBenchmarks/trace_dns" make benchmarks-test
+.PHONY: benchmarks-test
+benchmarks-test:
+	$(MAKE) -C ./integration/benchmarks
 
 .PHONY: website-local-update
 website-local-update:

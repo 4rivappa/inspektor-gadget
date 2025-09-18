@@ -9,11 +9,12 @@ on:
 jobs:
   check-link:
     name: Links check
+    if: github.repository == 'inspektor-gadget/inspektor-gadget'
     runs-on: ubuntu-latest
 
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
 
     - name: Check that there are not broken links
       uses: gaurav-nelson/github-action-markdown-link-check@3c3b66f1f7d0900e37b71eca45b63ea9eedfce31 # v1.0.17
